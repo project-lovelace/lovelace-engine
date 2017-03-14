@@ -25,25 +25,16 @@ class SubmitResource(object):
         code = result_json['submitted_code']
         code_filename = util.write_str_to_file(code)
 
-        # Generate problem and save the inputs to file.
+        # Generate problem with solution.
         problem, solution = Problem1().generate()
-        # input_filename = util.write_list_to_file(problem)
 
         # Run user's code and verify their answer.
         answer = PythonRunner().run(code_filename, problem)
         solved = Problem1().verify(answer, solution)
 
-        print(solved)
-
         resp.status = falcon.HTTP_200
-        resp.body = json.dumps(result_json)
+        resp.body = "Success!" if solved else "Failed."
 
 
-# Let's initialize a callable WSGI app here
 app = falcon.API()
-
-# Instantiate our resource - in general, resources are represented by long-lived class instances
-submit = SubmitResource()
-
-# Let 'things' handle all requests to the '/things' URL path
-app.add_route('/submit', submit)
+app.add_route('/submit', SubmitResource())
