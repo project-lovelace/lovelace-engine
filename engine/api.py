@@ -1,10 +1,15 @@
 import base64
 import falcon
 import json
+import logging
 
 from problems.problem1 import Problem1
 from engine.runners.python_runner import PythonRunner
 import engine.util as util
+
+logging.basicConfig()  # applies to all other loggers
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 class SubmitResource(object):
