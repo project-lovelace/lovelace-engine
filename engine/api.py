@@ -7,9 +7,9 @@ from problems.problem1 import Problem1
 from engine.runners.python_runner import PythonRunner
 import engine.util as util
 
-logging.basicConfig()  # applies to all other loggers
+# Config applies to all other loggers
+logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
 
 
 class SubmitResource(object):
