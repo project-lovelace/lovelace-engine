@@ -1,5 +1,6 @@
 # util.py
 
+import os
 import hashlib
 
 
@@ -44,3 +45,8 @@ def read_list_from_file(filename):
     the_list = file_contents.split(sep=' ')
 
     return the_list
+
+
+def delete_file(filename):
+    os.remove(filename)
+    return

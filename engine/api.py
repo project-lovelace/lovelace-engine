@@ -49,7 +49,7 @@ class SubmitResource(object):
         resp.set_header('Access-Control-Allow-Origin', '*')
         resp.body = '{"success": true}' if solved else '{"success": false}'
 
-        # TODO: Removed user's file.
+        util.delete_file(code_filename)
 
 
 app = falcon.API()
