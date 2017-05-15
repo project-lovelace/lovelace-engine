@@ -14,8 +14,7 @@ class PythonRunner(AbstractRunner):
 
         try:
             timeout_seconds = 1
-            process = run(command, stdout=PIPE, timeout=timeout_seconds,
-                check=True, encoding='utf-8', errors='utf-8')
+            process = run(command, stdout=PIPE, timeout=timeout_seconds, check=True)
         except CalledProcessError as ex:
             print(ex)
             print("Program returned non-zero code", ex.returncode)

@@ -94,3 +94,5 @@ problems
 
 # IDE files
 .idea
+
+.venv
