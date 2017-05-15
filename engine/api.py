@@ -49,6 +49,8 @@ class SubmitResource(object):
         resp.set_header('Access-Control-Allow-Origin', '*')
         resp.body = '{"success": true}' if solved else '{"success": false}'
 
+        # TODO: Removed user's file.
+
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())
