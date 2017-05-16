@@ -41,10 +41,13 @@ class SubmitResource(object):
         n = 1  # test case counter
         num_cases = len(problem.test_cases)
         successes = [None]*num_cases
+        details_html = '<p>'
 
         for tc in problem.test_cases:
             input_str = tc.input_str()
             log.info("Test case %d/%d [type:%s].", n, num_cases, tc.test_type.name)
+            details_html += 'Test case {:d}/{:d} [type:{}]: '.format(n, num_cases, tc.test_type.name)
+
             log.debug("Input string:")
             log.debug("%s", input_str)
 
@@ -58,9 +61,11 @@ class SubmitResource(object):
             if success:
                 successes[n-1] = True
                 log.info("Test case passed!")
+                details_html += 'passed!<br>'
             else:
                 successes[n-1] = False
                 log.info("Test case failed.")
+                details_html += 'failed.<br>'
 
             n = n+1
 
@@ -70,14 +75,20 @@ class SubmitResource(object):
                 passes += 1
 
         log.info("Passed %d/%d test cases.", passes, num_cases)
+        details_html += 'Passed {:d}/{:d} test cases.<br>'.format(passes, num_cases)
+
         if passes == num_cases:
             all_solved = True
         else:
             all_solved = False
 
+
         resp.status = falcon.HTTP_200
         resp.set_header('Access-Control-Allow-Origin', '*')
-        resp.body = '{"success": true}' if all_solved else '{"success": false}'
+        if all_solved:
+            resp.body = '{"success": true, "details": "' + details_html + '" }'
+        else:
+            resp.body = '{"success": false, "details": "' + details_html + '" }'
 
         util.delete_file(code_filename)
         log.debug("User code file deleted: %s", code_filename)
