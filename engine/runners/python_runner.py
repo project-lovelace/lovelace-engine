@@ -9,8 +9,8 @@ from .abstract_runner import AbstractRunner
 import logging
 logger = logging.getLogger(__name__)
 
-class PythonRunner(AbstractRunner):
 
+class PythonRunner(AbstractRunner):
     def run(self, code_filename, input_str):
         command = ['python3', code_filename]
 

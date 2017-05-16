@@ -77,18 +77,16 @@ class SubmitResource(object):
         log.info("Passed %d/%d test cases.", passes, num_cases)
         details_html += 'Passed {:d}/{:d} test cases.<br>'.format(passes, num_cases)
 
-        if passes == num_cases:
-            all_solved = True
-        else:
-            all_solved = False
+        all_solved = True if passes == num_cases else False
 
+        resp_dict = {
+            'details': details_html,
+            'success': True if all_solved else False
+        }
 
         resp.status = falcon.HTTP_200
         resp.set_header('Access-Control-Allow-Origin', '*')
-        if all_solved:
-            resp.body = '{"success": true, "details": "' + details_html + '" }'
-        else:
-            resp.body = '{"success": false, "details": "' + details_html + '" }'
+        resp.body = json.dumps(resp_dict)
 
         util.delete_file(code_filename)
         log.debug("User code file deleted: %s", code_filename)
