@@ -36,6 +36,8 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided.')
 
         # Create a Problem1 instance which will come generated with several test cases.
+        # TODO: Find a way of creating an instance of a specific depending on some variable passed by the user.
+        # Then this file will apply to every problem.
         problem = Problem1()
 
         n = 1  # test case counter
@@ -67,6 +69,10 @@ class SubmitResource(object):
                 log.info("Test case failed.")
                 details_html += 'failed.<br>'
 
+            # TODO: Pretty up this HTML.
+            details_html += 'Input:<br>' + '<div style="font-family: monospace;">' + input_str + '</div><br>'
+            details_html += 'Your output:<br>' + '<div style="font-family: monospace;">' + user_answer + '</div><br>'
+
             n = n+1
 
         passes = 0
@@ -76,6 +82,7 @@ class SubmitResource(object):
 
         log.info("Passed %d/%d test cases.", passes, num_cases)
         details_html += 'Passed {:d}/{:d} test cases.<br>'.format(passes, num_cases)
+        details_html += '</p>'
 
         all_solved = True if passes == num_cases else False
 
