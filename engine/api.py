@@ -24,32 +24,63 @@ class SubmitResource(object):
         try:
             result_json = json.loads(raw_json.decode('utf-8'))
         except ValueError:
-            raise falcon.HTTPError(falcon.HTTP_400,
-                                   'Invalid JSON',
-                                   'Could not decode the request body.')
+            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON', 'Could not decode the request body.')
 
         # Write user's code to file.
         code = result_json.get('code')
         if code:
             decoded_code = str(base64.b64decode(code), 'utf-8')
             code_filename = util.write_str_to_file(decoded_code)
+            log.debug("User code saved in: %s", code_filename)
         else:
-            raise falcon.HTTPError(falcon.HTTP_400,
-                                   'Invalid JSON.', 'No code provided.')
+            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided.')
 
-        # Generate problem and compute solution.
-        problem, _ = Problem1().generate()
-        solution = Problem1().solve(problem)
+        # Create a Problem1 instance which will come generated with several test cases.
+        problem = Problem1()
 
-        # Run user's code and verify their answer.
-        answer = PythonRunner().run(code_filename, problem)
-        solved = Problem1().verify(answer, solution)
+        n = 1  # test case counter
+        num_cases = len(problem.test_cases)
+        successes = [None]*num_cases
+
+        for tc in problem.test_cases:
+            input_str = tc.input_str()
+            log.info("Test case %d/%d [type:%s].", n, num_cases, tc.test_type.name)
+            log.debug("Input string:")
+            log.debug("%s", input_str)
+
+            user_answer = PythonRunner().run(code_filename, input_str)
+
+            log.debug("Output string:")
+            log.debug("%s", user_answer)
+
+            success = problem.verify_user_solution(input_str, user_answer)
+
+            if success:
+                successes[n-1] = True
+                log.info("Test case passed!")
+            else:
+                successes[n-1] = False
+                log.info("Test case failed.")
+
+            n = n+1
+
+        passes = 0
+        for success in successes:
+            if success:
+                passes += 1
+
+        log.info("Passed %d/%d test cases.", passes, num_cases)
+        if passes == num_cases:
+            all_solved = True
+        else:
+            all_solved = False
 
         resp.status = falcon.HTTP_200
         resp.set_header('Access-Control-Allow-Origin', '*')
-        resp.body = '{"success": true}' if solved else '{"success": false}'
+        resp.body = '{"success": true}' if all_solved else '{"success": false}'
 
         util.delete_file(code_filename)
+        log.debug("User code file deleted: %s", code_filename)
 
 
 app = falcon.API()
