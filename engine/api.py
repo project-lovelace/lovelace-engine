@@ -36,9 +36,12 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided.')
 
         # Create a Problem1 instance which will come generated with several test cases.
-        # TODO: Find a way of creating an instance of a specific depending on some variable passed by the user.
-        # Then this file will apply to every problem.
-        problem = Problem1()
+        # TODO: Find a better way of deciding which problem to create an instance of.
+        problem_id = int(result_json.get('problemID'))
+        if problem_id == 1:
+            problem = Problem1()
+        else:
+            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem ID.')
 
         n = 1  # test case counter
         num_cases = len(problem.test_cases)
