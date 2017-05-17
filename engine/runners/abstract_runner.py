@@ -1,10 +1,8 @@
-# runner.py
-
-import abc
+from abc import ABCMeta, abstractmethod
 
 
-class AbstractRunner(metaclass=abc.ABCMeta):
+class AbstractRunner(metaclass=ABCMeta):
 
-    @abc.abstractmethod
+    @abstractmethod
     def run(self, filename, input_str):
         """Execute the given file and return its output."""

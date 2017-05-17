@@ -47,11 +47,12 @@ class SubmitResource(object):
         num_cases = len(problem.test_cases)
         successes = [None]*num_cases
         details_html = '<p>'
+        test_case_details = ''
 
         for tc in problem.test_cases:
             input_str = tc.input_str()
-            log.info("Test case %d/%d [type:%s].", n, num_cases, tc.test_type.name)
-            details_html += 'Test case {:d}/{:d} [type:{}]: '.format(n, num_cases, tc.test_type.name)
+            log.info("Test case %d/%d (%s).", n, num_cases, tc.test_type.test_name)
+            tc_panel_title = 'Test case {:d}/{:d} ({}): '.format(n, num_cases, tc.test_type.test_name)
 
             log.debug("Input string:")
             log.debug("%s", input_str)
@@ -66,16 +67,18 @@ class SubmitResource(object):
             if success:
                 successes[n-1] = True
                 log.info("Test case passed!")
-                details_html += 'passed!<br>'
+                tc_panel_title += 'passed!'
             else:
                 successes[n-1] = False
                 log.info("Test case failed.")
-                details_html += 'failed.<br>'
+                tc_panel_title += 'failed.'
 
-            # TODO: Pretty up this HTML.
-            details_html += 'Input:<br>' + '<div style="font-family: monospace;">' + input_str + '</div><br>'
-            details_html += 'Your output:<br>' + '<div style="font-family: monospace;">' + user_answer + '</div><br>'
-
+            test_case_details += '<div class="panel panel-default">'\
+                                 + '<div class="panel-heading" style="font-size: medium;">' + tc_panel_title + '</div>'\
+                                 + '<div class="panel-body" style="font-family: monospace; font-size: medium;">'\
+                                 + 'Input:<br>' + input_str + '<br><br>'\
+                                 + 'Output:<br>' + user_answer + '</div>'\
+                                 + '</div>'
             n = n+1
 
         passes = 0
@@ -85,7 +88,7 @@ class SubmitResource(object):
 
         log.info("Passed %d/%d test cases.", passes, num_cases)
         details_html += 'Passed {:d}/{:d} test cases.<br>'.format(passes, num_cases)
-        details_html += '</p>'
+        details_html += test_case_details + '</p>'
 
         all_solved = True if passes == num_cases else False
 
