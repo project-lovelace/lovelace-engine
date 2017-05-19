@@ -64,7 +64,8 @@ class SubmitResource(object):
 
             p_info_str = 'Return code {:d}, utime: {:f} s, stime: {:f} s, maxrss: {:d} kB.<br>'\
                 .format(process_info['return_code'], process_info['utime'], process_info['stime'],
-                        process_info['maxrss'])
+                        process_info['maxrss'])  # resource
+            #           process_info['rss'])  # psutil
 
             success = problem.verify_user_solution(input_str, user_answer)
 
