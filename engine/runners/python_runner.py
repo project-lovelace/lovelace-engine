@@ -15,7 +15,6 @@ class PythonRunner(AbstractRunner):
         try:
             timeout_seconds = 1
 
-            # TODO: Use psutil.rlimit to set CPU/RAM/etc. restrictions on the process.
             r0 = resource.getrusage(resource.RUSAGE_CHILDREN)
 
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
