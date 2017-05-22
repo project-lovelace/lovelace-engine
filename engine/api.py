@@ -4,8 +4,8 @@ import json
 import logging
 
 from problems.problem1 import Problem1
-from runners.python_runner import PythonRunner
-import util
+from engine.runners.python_runner import PythonRunner
+import engine.util as util
 
 # Config applies to all other loggers
 logging.basicConfig(format='[%(asctime)s] %(name)s:%(levelname)s: %(message)s', level=logging.DEBUG)

@@ -1,7 +1,7 @@
 import resource  # Note: this is a UNIX-specific module.
-import psutil, subprocess
+# import psutil
+import subprocess
 
-import util
 from .abstract_runner import AbstractRunner
 
 import logging
