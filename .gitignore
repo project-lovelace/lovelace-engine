@@ -80,8 +80,10 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.venv/
 venv/
 ENV/
+env/
 
 # Spyder project settings
 .spyderproject
@@ -91,8 +93,7 @@ ENV/
 
 # Sensitive problem files
 problems
+tutorials
 
 # IDE files
 .idea
-
-.venv
