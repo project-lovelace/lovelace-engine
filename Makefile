@@ -1,6 +1,6 @@
 prepare-venv: clean
 	@echo "Preparing virtual environment..."
-	virtualenv --no-site-packages env
+	virtualenv -p python3.6 --no-site-packages env
 	env/bin/pip install -r requirements.txt
 
 start-engine:
