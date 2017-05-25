@@ -3,7 +3,6 @@ import falcon
 import json
 import logging
 
-from problems.problem1 import Problem1
 from engine.runners.python_runner import PythonRunner
 import engine.util as util
 
@@ -39,20 +38,23 @@ class SubmitResource(object):
         # TODO: Find a better way of deciding which problem to create an instance of.
         problem_id = int(result_json.get('problemID'))
         if problem_id == 1:
-            problem = Problem1()
+            import problems.problem1 as problem
         else:
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem ID.')
 
+        # Generate a bunch of test cases.from 
+        test_cases = problem.generate_test_cases()
+        n_cases = len(test_cases)
+
         n = 1  # test case counter
-        num_cases = len(problem.test_cases)
-        successes = [None]*num_cases
+        passes = [None]*n_cases
         details_html = '<p>'
         test_case_details = ''
 
-        for tc in problem.test_cases:
+        for tc in test_cases:
             input_str = tc.input_str()
-            logger.info("Test case %d/%d (%s).", n, num_cases, tc.test_type.test_name)
-            tc_panel_title = 'Test case {:d}/{:d} ({}): '.format(n, num_cases, tc.test_type.test_name)
+            logger.info("Test case %d/%d (%s).", n, n_cases, tc.test_type.test_name)
+            tc_panel_title = 'Test case {:d}/{:d} ({}): '.format(n, n_cases, tc.test_type.test_name)
 
             logger.debug("Input string:")
             logger.debug("%s", input_str)
@@ -67,14 +69,14 @@ class SubmitResource(object):
                         process_info['maxrss'])  # resource
             #           process_info['rss'])  # psutil
 
-            success = problem.verify_user_solution(input_str, user_answer)
+            passed = problem.verify_user_solution(input_str, user_answer)
 
-            if success:
-                successes[n-1] = True
+            if passed:
+                passes[n-1] = True
                 logger.info("Test case passed!")
                 tc_panel_title += 'passed!'
             else:
-                successes[n-1] = False
+                passes[n-1] = False
                 logger.info("Test case failed.")
                 tc_panel_title += 'failed.'
 
@@ -87,16 +89,13 @@ class SubmitResource(object):
                                  + '</div>'
             n = n+1
 
-        passes = 0
-        for success in successes:
-            if success:
-                passes += 1
+        n_passes = sum(passes)  # Turns out you can sum booleans (True=1, False=0).
 
-        logger.info("Passed %d/%d test cases.", passes, num_cases)
-        details_html += 'Passed {:d}/{:d} test cases.<br>'.format(passes, num_cases)
+        logger.info("Passed %d/%d test cases.", n_passes, n_cases)
+        details_html += 'Passed {:d}/{:d} test cases.<br>'.format(n_passes, n_cases)
         details_html += test_case_details + '</p>'
 
-        all_solved = True if passes == num_cases else False
+        all_solved = True if n_passes == n_cases else False
 
         resp_dict = {
             'details': details_html,
