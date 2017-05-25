@@ -2,6 +2,7 @@ import base64
 import falcon
 import json
 import logging
+import importlib
 
 from engine.runners.python_runner import PythonRunner
 import engine.util as util
@@ -34,20 +35,34 @@ class SubmitResource(object):
         else:
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided.')
 
-        # Create a Problem1 instance which will come generated with several test cases.
-        # TODO: Find a better way of deciding which problem to create an instance of.
-        problem_id = int(result_json.get('problemID'))
-        if problem_id == 1:
-            import problems.problem1 as problem
-        else:
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem ID.')
+        # Fetch problem ID and load the correct problem module.
+        problem_id = result_json.get('problemID')
+        try:
+            problem = importlib.import_module('problems.' + problem_id)
+            test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
+        except Exception:
+            logger.error("Could not import module `problems.%s`", problem_id)
+            logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
+            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problemID!')
 
-        # Generate a bunch of test cases.from 
-        test_cases = problem.generate_test_cases()
-        n_cases = len(test_cases)
+        logger.info("Generating test cases...")
+        test_cases = []
+
+        # Count number of test cases we'll be generating in total.
+        n_cases = 0
+        for test_type in test_case_type_enum:
+            n_cases += test_type.multiplicity
+
+        # Generate all the cases and store them in test_cases.
+        n = 1
+        for test_type in test_case_type_enum:
+            for _ in range(test_type.multiplicity):
+                logger.debug("Generating test case %d/%d...", n, n_cases)
+                test_cases.append(problem.generate_input(test_type))
+                n = n+1
 
         n = 1  # test case counter
-        passes = [None]*n_cases
+        passes = n_cases*[None]
         details_html = '<p>'
         test_case_details = ''
 
@@ -80,6 +95,7 @@ class SubmitResource(object):
                 logger.info("Test case failed.")
                 tc_panel_title += 'failed.'
 
+            # TODO: Move this html generation to the client side. Send the raw input/output so the client can do it.
             test_case_details += '<div class="panel panel-default">'\
                                  + '<div class="panel-heading" style="font-size: medium;">' + tc_panel_title + '</div>'\
                                  + '<div class="panel-body" style="font-family: monospace; font-size: medium;">'\
