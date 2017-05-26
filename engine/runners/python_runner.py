@@ -25,7 +25,7 @@ class PythonRunner(AbstractRunner):
 
             # Using resource
             p_info = {
-                'return_code': process.returncode,
+                'returnCode': process.returncode,
                 'utime': r.ru_utime - r0.ru_utime,
                 'stime': r.ru_stime - r0.ru_stime,
                 'maxrss': r.ru_maxrss
@@ -51,7 +51,7 @@ class PythonRunner(AbstractRunner):
 
         output_str = stdout.decode('utf-8').strip()
 
-        logger.debug("Finished running user code. Return code %d.", p_info['return_code'])
+        logger.debug("Finished running user code. Return code %d.", p_info['returnCode'])
         logger.debug("utime: %f, stime: %f", p_info['utime'], p_info['stime'])
         logger.debug("maxrss: %d kB", p_info['maxrss'])  # resource
         # logger.debug("rss: %d kB", p_info['rss'])  # psutil
