@@ -1,6 +1,8 @@
+ENGINE_PID_FILE := /var/run/engine.pid
+
 prepare-venv: clean
-	@echo "Creating new virtual environment..."
-	virtualenv -p python3.6 --no-site-packages env
+	@echo "Preparing virtual environment..."
+	virtualenv -p python3.6 --verbose --prompt='(lovelace-engine) ' env
 	env/bin/pip install -r requirements.txt
 
 update-requirements:
@@ -9,7 +11,11 @@ update-requirements:
 
 start-engine:
 	@echo "Starting the Lovelace Engine..."
-	env/bin/python env/bin/gunicorn --reload engine.api:app
+	env/bin/python env/bin/gunicorn --reload engine.api:app & echo "$$!" | sudo tee $(ENGINE_PID_FILE)
+
+stop-engine:
+	@echo "Stopping the Lovelace Engine gracefully..."
+	kill -SIGTERM `cat $(ENGINE_PID_FILE)`
 
 clean:
 	@echo "Deleting old virtual environment..."
