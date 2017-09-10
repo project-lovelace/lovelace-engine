@@ -14,6 +14,7 @@ def write_str_to_file(string):
     m = hashlib.sha1()
     m.update(blob)
     hash_code = m.hexdigest()
+
     filename = "{}.py".format(hash_code)
 
     f = open(filename, 'w')
