@@ -15,34 +15,20 @@ logger = logging.getLogger(__name__)
 class SubmitResource(object):
     def on_post(self, req, resp):
         """Handle POST requests."""
-        try:
-            raw_json = req.stream.read()
-        except Exception as ex:
-            raise falcon.HTTPError(falcon.HTTP_400, 'Error', ex.message)
-
-        try:
-            result_json = json.loads(raw_json.decode('utf-8'))
-        except ValueError:
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON', 'Could not decode the request body.')
-
-        # Write user's code to file.
-        code = result_json.get('code')
-        if code:
-            decoded_code = str(base64.b64decode(code), 'utf-8')
-            code_filename = util.write_str_to_file(decoded_code)
-            logger.debug("User code saved in: %s", code_filename)
-        else:
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided.')
+        payload = parse_payload(req)
+        code_filename = write_code_to_file(payload.get('code'))
 
         # Fetch problem ID and load the correct problem module.
-        problem_id = result_json.get('problemID')
+        problem_name = payload.get('problem')
+        problem_module = 'problems.{}'.format(problem_name)
         try:
-            problem = importlib.import_module('problems.' + problem_id)
-            test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
+            problem = importlib.import_module(problem_module)
         except Exception:
-            logger.error("Could not import module `problems.%s`", problem_id)
+            logger.error("Could not import module %s", problem_module)
             logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problemID!')
+            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
+        else:
+            test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -58,7 +44,7 @@ class SubmitResource(object):
             for _ in range(test_type.multiplicity):
                 logger.debug("Generating test case %d/%d...", n, n_cases)
                 test_cases.append(problem.generate_input(test_type))
-                n = n+1
+                n += 1
 
         n = 1  # test case counter
         passes = n_cases*[None]
@@ -109,6 +95,38 @@ class SubmitResource(object):
 
         util.delete_file(code_filename)
         logger.debug("User code file deleted: %s", code_filename)
+
+
+def parse_payload(http_request):
+    try:
+        raw_payload_data = http_request.stream.read().decode('utf-8')
+    except Exception as ex:
+        logger.error('Bad request, reason unknown. Returning 400')
+        raise falcon.HTTPError(falcon.HTTP_400, 'Error', ex.message)
+
+    try:
+        json_payload = json.loads(raw_payload_data)
+    except ValueError:
+        logger.error('Received invalid JSON: {}'.format(raw_payload_data))
+        logger.error('Returning 400 error')
+        raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON', 'Could not decode request body.')
+
+    return json_payload
+
+
+def write_code_to_file(code):
+    """
+    :param code: a base64 encoded string representing the user's submitted file 
+    :return: the name of the file containing the user's code
+    """
+    if code:
+        decoded_code = str(base64.b64decode(code), 'utf-8')
+        code_filename = util.write_str_to_file(decoded_code)
+        logger.debug("User code saved in: %s", code_filename)
+    else:
+        raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided in request.')
+
+    return code_filename
 
 
 app = falcon.API()

@@ -28,7 +28,7 @@ def write_list_to_file(the_list):
     """Saves a list to a file and returns the filename."""
 
     string = ' '.join(the_list)
-    filename = save_str_to_file(string)
+    filename = write_str_to_file(string)
 
     return filename
 
