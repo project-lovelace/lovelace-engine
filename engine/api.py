@@ -47,7 +47,7 @@ class SubmitResource(object):
                 n += 1
 
         n = 1  # test case counter
-        passes = n_cases*[None]
+        n_passes = 0
         test_case_details = []  # List of dicts each containing the details of a particular test case.
 
         for tc in test_cases:
@@ -62,10 +62,9 @@ class SubmitResource(object):
             logger.debug("%s", user_answer)
 
             if passed:
-                passes[n-1] = True
+                n_passes += 1
                 logger.info("Test case passed!")
             else:
-                passes[n-1] = False
                 logger.info("Test case failed.")
 
             n = n+1
@@ -79,13 +78,12 @@ class SubmitResource(object):
                 'processInfo': process_info
             })
 
-        n_passes = sum(passes)  # Turns out you can sum booleans (True=1, False=0).
-        all_solved = True if n_passes == n_cases else False
-
         logger.info("Passed %d/%d test cases.", n_passes, n_cases)
 
         resp_dict = {
-            'success': True if all_solved else False,
+            'success': True if n_passes == n_cases else False,
+            'numTestCases': n_cases,
+            'numTestCasesPassed': n_passes,
             'testCaseDetails': test_case_details
         }
 
