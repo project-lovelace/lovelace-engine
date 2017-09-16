@@ -19,7 +19,7 @@ class SubmitResource(object):
         code_filename = write_code_to_file(payload.get('code'))
 
         # Fetch problem ID and load the correct problem module.
-        problem_name = payload.get('problem')
+        problem_name = payload.get('problem').replace('-', '_')
         problem_module = 'problems.{}'.format(problem_name)
         try:
             problem = importlib.import_module(problem_module)
