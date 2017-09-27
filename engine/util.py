@@ -4,8 +4,14 @@ import os
 import hashlib
 
 
-def write_str_to_file(string):
-    """Saves a string to a file and returns the filename."""
+def write_str_to_file(string, extension=''):
+    """
+    Save the contents of a string to a file.
+
+    :param string: the data to be saved
+    :param extension: the file extension to be used for the file's name
+    :returns the name of the file containing the string data
+    """
 
     # Convert the code to a byte string.
     blob = string.encode('utf-8')
@@ -15,7 +21,7 @@ def write_str_to_file(string):
     m.update(blob)
     hash_code = m.hexdigest()
 
-    filename = "{}.py".format(hash_code)
+    filename = "{}{}".format(hash_code, extension)
 
     f = open(filename, 'w')
     f.write(string)
