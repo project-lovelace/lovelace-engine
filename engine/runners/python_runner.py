@@ -1,5 +1,4 @@
 import resource  # Note: this is a UNIX-specific module.
-# import psutil
 import subprocess
 
 from .abstract_runner import AbstractRunner
@@ -18,26 +17,16 @@ class PythonRunner(AbstractRunner):
             r0 = resource.getrusage(resource.RUSAGE_CHILDREN)
 
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            # process = psutil.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             stdout, stderr = process.communicate(input=bytes(input_str, encoding='utf-8'), timeout=timeout_seconds)
 
             r = resource.getrusage(resource.RUSAGE_CHILDREN)
 
-            # Using resource
             p_info = {
                 'returnCode': process.returncode,
                 'utime': r.ru_utime - r0.ru_utime,
                 'stime': r.ru_stime - r0.ru_stime,
                 'maxrss': r.ru_maxrss
             }
-
-            # Using psutil
-            # p_info = {
-            #     'return_code': process.returncode,
-            #     'utime': process.cpu_times().user,
-            #     'stime': process.cpu_times().system,
-            #     'rss': process.memory_info().rss
-            # }
         except subprocess.CalledProcessError as ex:
             logger.critical("%s", ex)
             logger.critical("Program returned non-zero code %s", ex.returncode)
@@ -54,6 +43,5 @@ class PythonRunner(AbstractRunner):
         logger.debug("Finished running user code. Return code %d.", p_info['returnCode'])
         logger.debug("utime: %f, stime: %f", p_info['utime'], p_info['stime'])
         logger.debug("maxrss: %d kB", p_info['maxrss'])  # resource
-        # logger.debug("rss: %d kB", p_info['rss'])  # psutil
 
         return output_str, p_info
