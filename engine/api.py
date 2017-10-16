@@ -8,8 +8,11 @@ from engine.runners.python_runner import PythonRunner
 import engine.util as util
 
 # Config applies to all other loggers
-logging.basicConfig(format='[%(asctime)s] %(name)s:%(levelname)s: %(message)s', level=logging.DEBUG)
+logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
+# logging.basicConfig(format='[%(asctime)s] %(name)s:%(levelname)s: %(message)s', level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 class SubmitResource(object):
