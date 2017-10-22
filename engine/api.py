@@ -10,9 +10,6 @@ import engine.util as util
 # Config applies to all other loggers
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
-# logging.basicConfig(format='[%(asctime)s] %(name)s:%(levelname)s: %(message)s', level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
 
 
 class SubmitResource(object):
@@ -36,8 +33,9 @@ class SubmitResource(object):
         logger.info("Generating test cases...")
         test_cases = []
         for i, test_type in enumerate(test_case_type_enum):
-            for _ in range(test_type.multiplicity):
-                logger.debug("Generating test case {}...".format(i+1))
+            for j in range(test_type.multiplicity):
+                logger.debug("Generating test case {}: {} ({}/{})...".format(
+                    len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
                 test_cases.append(problem.generate_input(test_type))
 
         num_passes = 0
@@ -126,3 +124,4 @@ def write_code_to_file(code, language):
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())
+app.add_error_handler(Exception, lambda ex, req, resp, params: logger.exception(ex))
