@@ -48,6 +48,14 @@ class SubmitResource(object):
         test_case_details = []  # List of dicts each containing the details of a particular test case.
 
         for i, tc in enumerate(test_cases):
+            test_case_resource = tc.input.get('dataset_filename')
+            if test_case_resource:
+                resource_path = os.path.join(cwd, '..', 'resources', test_case_resource)
+                resource_filename = os.path.basename(resource_path)
+                destination_path = os.path.join(cwd, resource_filename)
+                shutil.copyfile(resource_path, destination_path)
+                resources.append(destination_path)
+
             input_str = tc.input_str()
             user_answer, process_info = PythonRunner().run(code_filename, input_str)
             passed = problem.verify_user_solution(input_str, user_answer)
