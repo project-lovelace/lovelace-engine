@@ -1,15 +1,18 @@
 import base64
-import falcon
+import shutil
 import json
 import logging
 import importlib
-
+import falcon
+import os
 from engine.runners.python_runner import PythonRunner
 import engine.util as util
 
 # Config applies to all other loggers
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
+
+cwd = os.path.dirname(os.path.abspath(__file__))
 
 
 class SubmitResource(object):
@@ -29,6 +32,8 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
             test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
+            resources = [shutil.copyfile(os.path.join(cwd, '..', 'resources', f), os.path.join(cwd, f))
+                         for f in problem.RESOURCES]
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -64,7 +69,7 @@ class SubmitResource(object):
                 'inputString': input_str,
                 'outputString': user_answer,
                 'inputDict': tc.input,
-                'outputDict': tc.output,  # TODO: This is our solution. We should be using the user's soluton.
+                'outputDict': tc.output,  # TODO: This is our solution. We should be using the user's solution.
                 'passed': passed,
                 'processInfo': process_info
             })
@@ -84,6 +89,10 @@ class SubmitResource(object):
 
         util.delete_file(code_filename)
         logger.debug("User code file deleted: %s", code_filename)
+
+        for file_path in resources:
+            logging.debug('Deleting resource {}'.format(file_path))
+            os.remove(file_path)
 
 
 def parse_payload(http_request):

@@ -94,6 +94,7 @@ env/
 # Sensitive problem files
 problems
 tutorials
+resources
 
 # IDE files
 .idea
