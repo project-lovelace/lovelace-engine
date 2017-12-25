@@ -1,7 +1,7 @@
 # util.py
 
-import os
 import hashlib
+import os
 
 
 def write_str_to_file(string, extension=''):

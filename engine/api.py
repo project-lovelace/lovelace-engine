@@ -1,12 +1,14 @@
 import base64
-import shutil
+import importlib
 import json
 import logging
-import importlib
-import falcon
 import os
-from engine.runners.python_runner import PythonRunner
+import shutil
+
+import falcon
+
 import engine.util as util
+from engine.runners.python_runner import PythonRunner
 
 # Config applies to all other loggers
 logging.config.fileConfig('logging.ini')

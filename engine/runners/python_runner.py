@@ -1,9 +1,9 @@
+import logging
 import resource  # Note: this is a UNIX-specific module.
 import subprocess
 
 from .abstract_runner import AbstractRunner
 
-import logging
 logger = logging.getLogger(__name__)
 
 
