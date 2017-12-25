@@ -34,8 +34,13 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
             test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
-            resources = [shutil.copyfile(os.path.join(cwd, '..', 'resources', f), os.path.join(cwd, f))
-                         for f in problem.RESOURCES]
+            resources = []
+            problem_dir = problem_name
+            for resource_file_name in problem.RESOURCES:
+                from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
+                to_path = os.path.join(cwd, resource_file_name)
+                shutil.copyfile(from_path, to_path)
+                resources.append(to_path)
 
         logger.info("Generating test cases...")
         test_cases = []
