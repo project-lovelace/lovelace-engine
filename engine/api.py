@@ -10,7 +10,7 @@ import falcon
 import engine.util as util
 from engine.runners.python_runner import PythonRunner
 
-# Config applies to all other loggers
+# Config applies to loggers created in modules accessed from this module
 logging.config.fileConfig('logging.ini')
 logger = logging.getLogger(__name__)
 
