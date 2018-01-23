@@ -11,7 +11,8 @@ import engine.util as util
 from engine.runners.python_runner import PythonRunner
 
 # Config applies to loggers created in modules accessed from this module
-logging.config.fileConfig('logging.ini')
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logging.ini')
+logging.config.fileConfig(log_file_path)
 logger = logging.getLogger(__name__)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +40,7 @@ class SubmitResource(object):
             for resource_file_name in problem.RESOURCES:
                 from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
                 to_path = os.path.join(cwd, resource_file_name)
+                logger.debug("Copying resource from {} to {}".format(from_path, to_path))
                 shutil.copyfile(from_path, to_path)
                 resources.append(to_path)
 
