@@ -16,12 +16,14 @@ logging.config.fileConfig(log_file_path)
 logger = logging.getLogger(__name__)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
+os.chdir(cwd)
 
 
 class SubmitResource(object):
     def on_post(self, req, resp):
         """Handle POST requests."""
-        payload = parse_payload(req)
+        # payload = parse_payload(req)
+        payload = req.media
         code_filename = write_code_to_file(payload['code'], payload['language'])
 
         # Fetch problem ID and load the correct problem module.
@@ -150,4 +152,7 @@ def write_code_to_file(code, language):
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())
-app.add_error_handler(Exception, lambda ex, req, resp, params: logger.exception(ex))
+app.add_error_handler(
+    Exception,
+    lambda ex, req, resp, params: logger.exception(ex)
+)

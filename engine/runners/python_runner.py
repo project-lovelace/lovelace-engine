@@ -1,4 +1,5 @@
 import logging
+import os
 import resource  # Note: this is a UNIX-specific module.
 import subprocess
 
@@ -16,7 +17,9 @@ class PythonRunner(AbstractRunner):
 
             r0 = resource.getrusage(resource.RUSAGE_CHILDREN)
 
-            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            engine_venv = os.environ.copy()
+            engine_venv["PATH"] = "/usr/sbin:/sbin:" + engine_venv["PATH"]
+            process = subprocess.Popen(command, env=engine_venv, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             stdout, stderr = process.communicate(input=bytes(input_str, encoding='utf-8'), timeout=timeout_seconds)
 
             r = resource.getrusage(resource.RUSAGE_CHILDREN)
