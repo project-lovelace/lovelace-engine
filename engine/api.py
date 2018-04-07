@@ -157,3 +157,4 @@ app.add_error_handler(
     Exception,
     lambda ex, req, resp, params: logger.exception(ex)
 )
+util.configure_lxd()

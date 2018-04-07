@@ -1,14 +1,10 @@
 import logging
-import os
 import pickle
-import resource  # Note: this is a UNIX-specific module.
 import shutil
-import subprocess
 
-from .abstract_runner import AbstractRunner
 import engine.util as util
-# from ..simple_lxd import simple_lxd as lxd
-
+from .abstract_runner import AbstractRunner
+from ..simple_lxd import simple_lxd as lxd
 
 logger = logging.getLogger(__name__)
 
@@ -20,41 +16,36 @@ class PythonRunner(AbstractRunner):
         with open(input_pickle, mode='wb') as f:
             pickle.dump(input_tuple, file=f)
 
-        engine_venv = os.environ.copy()
-        engine_venv["PATH"] = "/usr/sbin:/sbin:" + engine_venv["PATH"]
-
         runner_file = '{}.run.py'.format(run_id)
         shutil.copy('run_it.py', runner_file)
 
-        command = ['python3', runner_file]
-        timeout_seconds = 10
-        r0 = resource.getrusage(resource.RUSAGE_CHILDREN)
+        container_name = 'lovelace-{}'.format(run_id)
+        lxd.launch(
+            "images:ubuntu/xenial/i386",
+            name=container_name,
+            profile="lovelace"
+        )
 
-        try:
-            process = subprocess.Popen(command, env=engine_venv)
-            process.wait(timeout_seconds)
-        except subprocess.CalledProcessError as ex:
-            logger.critical("%s", ex)
-            logger.critical("Program returned non-zero code %s", ex.returncode)
-            logger.critical("Command used: %s", ''.join(ex.cmd))
-            logger.critical("Program output: %s", ex.stdout)
-            return
-        except subprocess.TimeoutExpired as ex:
-            logger.critical("%s", ex)
-            logger.critical("Program took longer than %d seconds.", ex.timeout)
-            logger.critical("Command used: %s", ''.join(ex.cmd))
-            logger.critical("Program output: %s", ex.stdout)
-            return
+        for file_name in [code_filename, runner_file, input_pickle]:
+            source_path = file_name
+            target_path = "/tmp/{}".format(file_name)
+            lxd.file_push(container_name, source_path, target_path)
 
-        r = resource.getrusage(resource.RUSAGE_CHILDREN)
+        runner_path = "/tmp/{}".format(runner_file)
+        command = ['python3', runner_path]
+        lxd.execute(container_name, command)
+
         p_info = {
-            'returnCode': process.returncode,
-            'utime': r.ru_utime - r0.ru_utime,
-            'stime': r.ru_stime - r0.ru_stime,
-            'maxrss': r.ru_maxrss
+            'returnCode': 0,
+            'utime': 0,
+            'stime': 0,
+            'maxrss': 0,
         }
 
         output_pickle = '{}.output.pickle'.format(run_id)
+        source_path = '/tmp/{}'.format(output_pickle)
+        target_path = output_pickle
+        lxd.file_pull(container_name, source_path, target_path)
         with open(output_pickle, mode='rb') as f:
             user_output = pickle.load(f)
 
@@ -67,13 +58,3 @@ class PythonRunner(AbstractRunner):
         util.delete_file(runner_file)
 
         return user_output, p_info
-
-    # container_name = str(hash(code_filename))
-    # lxd.launch("images:ubuntu/xenial/i386", name=container_name)
-    #
-    # source_path = code_filename
-    # target_path = "/tmp/{}".format(code_filename)
-    # lxd.file_push(container_name, source_path, target_path)
-    #
-    # command = ['python3', target_path]
-    # lxd.execute(container_name, command, mode="interactive")
