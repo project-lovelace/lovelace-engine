@@ -67,13 +67,14 @@ class SubmitResource(object):
                 shutil.copyfile(resource_path, destination_path)
                 resources.append(destination_path)
 
-            input_str = tc.input_str()
-            user_answer, process_info = PythonRunner().run(code_filename, input_str)
-            passed = problem.verify_user_solution(input_str, user_answer)
+            input_tuple = tc.input_tuple()
+
+            user_answer, process_info = PythonRunner().run(code_filename, input_tuple)
+            passed = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input string:")
-            logger.debug("%s", input_str)
+            logger.debug("%s", input_tuple)
             logger.debug("Output string:")
             logger.debug("%s", user_answer)
 
@@ -85,7 +86,7 @@ class SubmitResource(object):
 
             test_case_details.append({
                 'testCaseType': tc.test_type.test_name,
-                'inputString': input_str,
+                'inputString': str(input_tuple),
                 'outputString': user_answer,
                 'inputDict': tc.input,
                 'outputDict': tc.output,  # TODO: This is our solution. We should be using the user's solution.
