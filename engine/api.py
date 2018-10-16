@@ -16,12 +16,14 @@ logging.config.fileConfig(log_file_path)
 logger = logging.getLogger(__name__)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
+os.chdir(cwd)
 
 
 class SubmitResource(object):
     def on_post(self, req, resp):
         """Handle POST requests."""
-        payload = parse_payload(req)
+        # payload = parse_payload(req)
+        payload = req.media
         code_filename = write_code_to_file(payload['code'], payload['language'])
 
         # Fetch problem ID and load the correct problem module.
@@ -65,13 +67,14 @@ class SubmitResource(object):
                 shutil.copyfile(resource_path, destination_path)
                 resources.append(destination_path)
 
-            input_str = tc.input_str()
-            user_answer, process_info = PythonRunner().run(code_filename, input_str)
-            passed = problem.verify_user_solution(input_str, user_answer)
+            input_tuple = tc.input_tuple()
+
+            user_answer, process_info = PythonRunner().run(code_filename, input_tuple)
+            passed = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input string:")
-            logger.debug("%s", input_str)
+            logger.debug("%s", input_tuple)
             logger.debug("Output string:")
             logger.debug("%s", user_answer)
 
@@ -83,7 +86,7 @@ class SubmitResource(object):
 
             test_case_details.append({
                 'testCaseType': tc.test_type.test_name,
-                'inputString': input_str,
+                'inputString': str(input_tuple),
                 'outputString': user_answer,
                 'inputDict': tc.input,
                 'outputDict': tc.output,  # TODO: This is our solution. We should be using the user's solution.
@@ -150,4 +153,8 @@ def write_code_to_file(code, language):
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())
-app.add_error_handler(Exception, lambda ex, req, resp, params: logger.exception(ex))
+app.add_error_handler(
+    Exception,
+    lambda ex, req, resp, params: logger.exception(ex)
+)
+util.configure_lxd()

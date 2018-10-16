@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-ENGINE_PID_FILE := /var/run/lovelace-engine.pid
++ENGINE_PID_FILE := /var/run/lovelace-engine.pid
 ENGINE_PORT := 14714
 
 prepare-venv: clean
