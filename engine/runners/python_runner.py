@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class PythonRunner(AbstractRunner):
     def run(self, code_filename, input_tuple):
-        logger.debug("Running {:s} with input {:s}".format(code_filename, input_tuple))
+        logger.debug("Running {:s} with input {:}".format(code_filename, input_tuple))
 
         run_id = code_filename.split('.')[0]
         input_pickle = '{}.input.pickle'.format(run_id)

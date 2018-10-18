@@ -1,5 +1,8 @@
 import os
 from subprocess import Popen, PIPE, STDOUT
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LXDError(Exception):
@@ -135,7 +138,7 @@ def execute(container, command_line, mode="non-interactive", env=None):
     :param env:
     :return:
     """
-    logger.debug("Executing command `{:s}` in Linux container {:s} (mode={:}, env={:})..."
+    logger.debug("Executing command `{:}` in Linux container {:s} (mode={:}, env={:})..."
                  .format(command_line, container, mode, env))
 
     command = ["lxc", "exec", container, "--mode={}".format(mode)]
