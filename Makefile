@@ -26,7 +26,7 @@ start-engine: stop-engine
 
 start-engine-fg: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."
-	$(PYTHON37) $(GUNICORN) --reload --bind localhost:$(ENGINE_PORT) engine.api:app
+	$(PYTHON37) $(GUNICORN) --preload --log-level debug --reload --bind localhost:$(ENGINE_PORT) engine.api:app
 
 stop-engine:
 	@echo "Stopping the Lovelace Engine gracefully..."
