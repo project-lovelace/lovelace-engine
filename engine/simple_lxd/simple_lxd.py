@@ -66,7 +66,9 @@ def file_push(container, source_path, target_path,
     logger.debug("Pushing file {:s} into Linux container {:s} in {:s} (uid={:}, gid={:}, mode={:})..."
                  .format(source_path, container, target_path, uid, gid, mode))
 
-    command = ["lxc", "file", "push", "--force-local", "--verbose"]
+    # command = ["lxc", "file", "push", "--force-local", "--verbose"]
+    command = ["lxc", "file", "push", "--debug", "--verbose"]
+
     if uid:
         command.append("--uid=")
         command.append(uid)
@@ -82,14 +84,14 @@ def file_push(container, source_path, target_path,
     _stdout_to_str(push_proc.stdout)
 
     # TODO clean up this function, add max iterations
-    check_if_pushed_cmd = ["test", "-f", target_path]
-    exit_code = 1
-    while exit_code == 1:
-        logger.debug("Testing if file was pushed...")
-        push_proc = _run(command)
-        exec_proc = execute(container, check_if_pushed_cmd)
-        exit_code = exec_proc.poll()
-        _stdout_to_str(exec_proc.stdout)
+#    check_if_pushed_cmd = ["test", "-f", target_path]
+#    exit_code = 1
+#    while exit_code == 1:
+#        logger.debug("Testing if file was pushed...")
+#        push_proc = _run(command)
+#        exec_proc = execute(container, check_if_pushed_cmd)
+#        exit_code = exec_proc.poll()
+#        _stdout_to_str(exec_proc.stdout)
 
     return push_proc
 
@@ -241,6 +243,7 @@ def _stdout_to_str(text_io_wrapper):
     line = text_io_wrapper.readline()
     total = ""
     while line:
+        logger.debug(line) 
         print(line, end="")
         line = text_io_wrapper.readline()
         total += line

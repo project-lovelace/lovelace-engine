@@ -2,7 +2,7 @@ import importlib
 import os
 import pickle
 
-os.chdir('/tmp')
+# os.chdir('/tmp')
 run_id = os.path.basename(__file__).split('.')[0]
 
 input_pickle = '{}.input.pickle'.format(run_id)

@@ -29,12 +29,14 @@ class PythonRunner(AbstractRunner):
             profile="lovelace"
         )
 
+        # lxd._run(["lxc", "exec", container_name, "--", "mkdir", "/lovelace/"], timeout=5)
+
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name
-            target_path = "/tmp/{}".format(file_name)
+            target_path = "/root/{}".format(file_name)
             lxd.file_push(container_name, source_path, target_path)
 
-        runner_path = "/tmp/{}".format(runner_file)
+        runner_path = "/root/{}".format(runner_file)
         command = ['python3', runner_path]
         lxd.execute(container_name, command)
 
@@ -46,7 +48,7 @@ class PythonRunner(AbstractRunner):
         }
 
         output_pickle = '{}.output.pickle'.format(run_id)
-        source_path = '/tmp/{}'.format(output_pickle)
+        source_path = '/root/{}'.format(output_pickle)
         target_path = output_pickle
 
         lxd.file_pull(container_name, source_path, target_path)
