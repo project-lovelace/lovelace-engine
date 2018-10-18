@@ -3,6 +3,9 @@ SHELL := /bin/bash
 ENGINE_PID_FILE := /var/run/lovelace-engine.pid
 ENGINE_PORT := 14714
 
+PYTHON37 := /root/anaconda3/envs/lovelace_engine_env/bin/python
+GUNICORN := /root/anaconda3/envs/lovelace_engine_env/bin/gunicorn
+
 prepare-venv: clean
 	@echo "Preparing virtual environment..."
 	virtualenv -p python3.6 --verbose --prompt='(lovelace-engine) ' env
@@ -19,11 +22,11 @@ update-requirements:
 
 start-engine: stop-engine
 	@echo "Starting the Lovelace Engine in the background..."
-	python /root/anaconda3/envs/lovelace_env/bin/gunicorn --reload --pid $(ENGINE_PID_FILE) --daemon --error-logfile /var/log/lovelace/engine-daemon-error.log --bind localhost:$(ENGINE_PORT) engine.api:app
+	$(PYTHON37) $(GUNICORN) --reload --pid $(ENGINE_PID_FILE) --daemon --error-logfile /var/log/lovelace/engine-daemon-error.log --bind localhost:$(ENGINE_PORT) engine.api:app
 
 start-engine-fg: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."
-	python /root/anaconda3/envs/lovelace_env/bin/gunicorn --reload --bind localhost:$(ENGINE_PORT) engine.api:app
+	$(PYTHON37) $(GUNICORN) --reload --bind localhost:$(ENGINE_PORT) engine.api:app
 
 stop-engine:
 	@echo "Stopping the Lovelace Engine gracefully..."
