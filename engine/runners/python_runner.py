@@ -11,13 +11,16 @@ logger = logging.getLogger(__name__)
 
 class PythonRunner(AbstractRunner):
     def run(self, code_filename, input_tuple):
+        logger.debug("Running {:s} with input {:s}".format(code_filename, input_tuple))
+
         run_id = code_filename.split('.')[0]
         input_pickle = '{}.input.pickle'.format(run_id)
         with open(input_pickle, mode='wb') as f:
+            logger.debug("Pickling input tuple in {:s}...".format(input_pickle))
             pickle.dump(input_tuple, file=f)
 
-        runner_file = '{}.run.py'.format(run_id)
-        shutil.copy('run_it.py', runner_file)
+        runner_file = "{}.run.py".format(run_id)
+        shutil.copy("run_it.py", runner_file)
 
         container_name = 'lovelace-{}'.format(run_id)
         lxd.launch(
@@ -45,7 +48,9 @@ class PythonRunner(AbstractRunner):
         output_pickle = '{}.output.pickle'.format(run_id)
         source_path = '/tmp/{}'.format(output_pickle)
         target_path = output_pickle
+
         lxd.file_pull(container_name, source_path, target_path)
+
         with open(output_pickle, mode='rb') as f:
             user_output = pickle.load(f)
 
