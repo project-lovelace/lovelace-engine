@@ -223,12 +223,12 @@ def _run(command_args, timeout=100):
     process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
     process.wait(timeout)
     retval = process.poll()
-
     logger.debug("Return value {:} from command {:}".format(retval, " ".join(command_args)))
-    logger.debug("process.stdout:\n{:}".format(process.stdout))
 
-    # for line in process.stdout:
-    #     print("\t{}".format(line), end='')
+    logger.debug("process.stdout:")
+    for line in process.stdout:
+        logger.debug("{:}".format(line))
+
     # if retval != 0:
     #     raise LXDError
 
