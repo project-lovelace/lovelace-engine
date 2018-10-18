@@ -24,15 +24,18 @@ class SubmitResource(object):
         """Handle POST requests."""
         # payload = parse_payload(req)
         payload = req.media
+
         code_filename = write_code_to_file(payload['code'], payload['language'])
 
         # Fetch problem ID and load the correct problem module.
         problem_name = payload['problem'].replace('-', '_')
-        problem_module = 'problems.{}'.format(problem_name)
+        problem_module = 'problems.{:s}'.format(problem_name)
+        logger.debug("problem_name={:s} problem_module={:s}".format(problem_name, problem_module))
+
         try:
             problem = importlib.import_module(problem_module)
         except Exception:
-            logger.exception("Could not import module %s", problem_module)
+            logger.exception("Could not import module {:s}".format(problem_module))
             logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
@@ -42,7 +45,9 @@ class SubmitResource(object):
             for resource_file_name in problem.RESOURCES:
                 from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
                 to_path = os.path.join(cwd, resource_file_name)
-                logger.debug("Copying resource from {} to {}".format(from_path, to_path))
+
+                logger.debug("Copying resource from {:s} to {:s}".format(from_path, to_path))
+
                 shutil.copyfile(from_path, to_path)
                 resources.append(to_path)
 
@@ -50,11 +55,11 @@ class SubmitResource(object):
         test_cases = []
         for i, test_type in enumerate(test_case_type_enum):
             for j in range(test_type.multiplicity):
-                logger.debug("Generating test case {}: {} ({}/{})...".format(
+                logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})...".format(
                     len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
                 test_cases.append(problem.generate_input(test_type))
 
-        num_passes = 0
+        num_passes = 0  # Number of test cases passed.
         num_cases = len(test_cases)
         test_case_details = []  # List of dicts each containing the details of a particular test case.
 
@@ -64,18 +69,25 @@ class SubmitResource(object):
                 resource_path = os.path.join(cwd, '..', 'resources', test_case_resource)
                 resource_filename = os.path.basename(resource_path)
                 destination_path = os.path.join(cwd, resource_filename)
+
+                logger.debug("Copying test case resource from {:s} to {:s}".format(resource_path, destination_path))
+
                 shutil.copyfile(resource_path, destination_path)
                 resources.append(destination_path)
 
             input_tuple = tc.input_tuple()
+            logger.debug("Input tuple: {:}".format(input_tuple))
 
             user_answer, process_info = PythonRunner().run(code_filename, input_tuple)
+            logger.debug("User answer: {:}".format(user_answer))
+            logger.debug("Process info: {:}".format(process_info))
+
             passed = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
-            logger.debug("Input string:")
+            logger.debug("Input tuple:")
             logger.debug("%s", input_tuple)
-            logger.debug("Output string:")
+            logger.debug("User answer:")
             logger.debug("%s", user_answer)
 
             if passed:
@@ -108,10 +120,10 @@ class SubmitResource(object):
         resp.body = json.dumps(resp_dict)
 
         util.delete_file(code_filename)
-        logger.debug("User code file deleted: %s", code_filename)
+        logger.debug("User code file deleted: {:s}".format(code_filename))
 
         for file_path in resources:
-            logging.debug('Deleting resource {}'.format(file_path))
+            logging.debug("Deleting resource {:s}".format(file_path))
             os.remove(file_path)
 
 
@@ -119,14 +131,14 @@ def parse_payload(http_request):
     try:
         raw_payload_data = http_request.stream.read().decode('utf-8')
     except Exception as ex:
-        logger.error('Bad request, reason unknown. Returning 400')
+        logger.error("Bad request, reason unknown. Returning 400.")
         raise falcon.HTTPError(falcon.HTTP_400, 'Error', ex.message)
 
     try:
         json_payload = json.loads(raw_payload_data)
     except ValueError:
-        logger.error('Received invalid JSON: {}'.format(raw_payload_data))
-        logger.error('Returning 400 error')
+        logger.error("Received invalid JSON: {:}".format(raw_payload_data))
+        logger.error("Returning 400 error.")
         raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON', 'Could not decode request body.')
 
     return json_payload
@@ -146,7 +158,8 @@ def write_code_to_file(code, language):
     decoded_code = str(base64.b64decode(code), 'utf-8')
     extension = {'python3': '.py'}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
-    logger.debug('User code saved in: {}'.format(code_filename))
+
+    logger.debug("User code saved in: {:s}".format(code_filename))
 
     return code_filename
 
