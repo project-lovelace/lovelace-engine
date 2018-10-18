@@ -85,6 +85,7 @@ def file_push(container, source_path, target_path,
     check_if_pushed_cmd = ["test", "-f", target_path]
     exit_code = 1
     while exit_code == 1:
+        logger.debug("Testing if file was pushed...")
         push_proc = _run(command)
         exec_proc = execute(container, check_if_pushed_cmd)
         exit_code = exec_proc.poll()
@@ -223,11 +224,12 @@ def _run(command_args, timeout=100):
     process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
     process.wait(timeout)
     retval = process.poll()
-    logger.debug("Return value {:} from command {:}".format(retval, " ".join(command_args)))
+    logger.debug("Return value: {:}".format(retval))
 
-    logger.debug("process.stdout:")
-    for line in process.stdout:
-        logger.debug("{:}".format(line))
+    if process.stdout:
+        logger.debug("process.stdout:")
+        for line in process.stdout:
+            logger.debug("{:}".format(line))
 
     # if retval != 0:
     #     raise LXDError
