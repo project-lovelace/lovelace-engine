@@ -21,8 +21,8 @@ update-requirements:
 	rm -f requirements.txt.old
 
 start-engine: stop-engine
-	@echo "Starting the Lovelace Engine in the background..."
-	$(PYTHON37) $(GUNICORN) --daemon --workers 1 --log-level info --preload --pid $(ENGINE_PID_FILE) --access-logfile /var/log/lovelace/gunicorn-access.log --error-logfile /var/log/lovelace/gunicorn-error.log --bind localhost:$(ENGINE_PORT) engine.api:app
+	# @echo "Starting the Lovelace Engine in the background..."
+	# $(PYTHON37) $(GUNICORN) --daemon --workers 1 --log-level info --preload --pid $(ENGINE_PID_FILE) --access-logfile /var/log/lovelace/gunicorn-access.log --error-logfile /var/log/lovelace/gunicorn-error.log --bind localhost:$(ENGINE_PORT) engine.api:app
 
 start-engine-fg: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."

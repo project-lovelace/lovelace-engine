@@ -22,15 +22,6 @@ class PythonRunner(AbstractRunner):
         runner_file = "{}.run.py".format(run_id)
         shutil.copy("run_it.py", runner_file)
 
-        # container_name = 'lovelace-{}'.format(run_id)
-        # lxd.launch(
-        #     "images:ubuntu/xenial/i386",
-        #     name=container_name,
-        #     profile="lovelace"
-        # )
-
-        # lxd._run(["lxc", "exec", container_name, "--", "mkdir", "/lovelace/"], timeout=5)
-
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name
             target_path = "/root/{}".format(file_name)
@@ -54,7 +45,11 @@ class PythonRunner(AbstractRunner):
         lxd.file_pull(container_name, source_path, target_path)
 
         with open(output_pickle, mode='rb') as f:
-            user_output = pickle.load(f)
+            output_dict = pickle.load(f)
+
+        user_output = output_dict['user_output']
+        p_info['utime'] = output_dict['runtime']
+        p_info['maxrss'] = output_dict['max_mem_usage']
 
         logger.debug("Finished running user code. Return code %d.", p_info['returnCode'])
         logger.debug("utime: %f, stime: %f", p_info['utime'], p_info['stime'])
