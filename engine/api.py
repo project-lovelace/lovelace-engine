@@ -6,8 +6,9 @@ import os
 import shutil
 
 # Config applies to loggers created in modules accessed from this module
-# Logger must loaded before importing other modules that rely on this logger, otherwise they will be getting an
-# empty logger and messages from that module will not be logged.
+# Logger must loaded before importing other modules that rely on this logger,
+# otherwise they will be getting an empty logger and messages from that module
+# will not be logged.
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logging.ini')
 logging.config.fileConfig(log_file_path)
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 import falcon
 
 import engine.util as util
+from engine.simple_lxd import simple_lxd as lxd
 from engine.runners.python_runner import PythonRunner
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +24,26 @@ os.chdir(cwd)
 
 
 class SubmitResource(object):
+    def __init__(self):
+        self.pid = os.getpid()
+        self.container_name = 'lovelace-{:d}'.format(self.pid)
+
+        logger.info("Launching Linux container {:s} (pid={:d})..."
+            .format(self.container_name, self.pid))
+        lxd.launch("images:ubuntu/xenial/i386", name=self.container_name, profile="lovelace")
+
+    # TODO: Need to figure out how to stop and delete the containers on exit. The current
+    # problem is that it crashes upon calling __del__ due to e.g. SIGKILL because Python
+    # is trying to shut everything down including logging, so the logging functions
+    # actually end up crashing Python and we never get to stop and delete the containers.
+    # def __del__(self):
+        # logging.shutdown()
+        # logger.info("Stopping Linux container {:s}...".format(self.container_name))
+        # lxd.stop(self.container_name)
+
+        # logger.info("Deleting Linux container {:s}...".format(self.container_name))
+        # lxd.delete(self.container_name)
+
     def on_post(self, req, resp):
         """Handle POST requests."""
         # payload = parse_payload(req)
@@ -72,7 +94,8 @@ class SubmitResource(object):
                 resource_filename = os.path.basename(resource_path)
                 destination_path = os.path.join(cwd, resource_filename)
 
-                logger.debug("Copying test case resource from {:s} to {:s}".format(resource_path, destination_path))
+                logger.debug("Copying test case resource from {:s} to {:s}"
+                    .format(resource_path, destination_path))
 
                 shutil.copyfile(resource_path, destination_path)
                 resources.append(destination_path)
@@ -80,7 +103,7 @@ class SubmitResource(object):
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
 
-            user_answer, process_info = PythonRunner().run(code_filename, input_tuple)
+            user_answer, process_info = PythonRunner().run(self.container_name, code_filename, input_tuple)
             logger.debug("User answer: {:}".format(user_answer))
             logger.debug("Process info: {:}".format(process_info))
 
@@ -164,7 +187,6 @@ def write_code_to_file(code, language):
     logger.debug("User code saved in: {:s}".format(code_filename))
 
     return code_filename
-
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())

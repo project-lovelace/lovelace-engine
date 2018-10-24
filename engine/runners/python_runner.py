@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class PythonRunner(AbstractRunner):
-    def run(self, code_filename, input_tuple):
+    def run(self, container_name, code_filename, input_tuple):
         logger.debug("Running {:s} with input {:}".format(code_filename, input_tuple))
 
         run_id = code_filename.split('.')[0]
@@ -22,12 +22,12 @@ class PythonRunner(AbstractRunner):
         runner_file = "{}.run.py".format(run_id)
         shutil.copy("run_it.py", runner_file)
 
-        container_name = 'lovelace-{}'.format(run_id)
-        lxd.launch(
-            "images:ubuntu/xenial/i386",
-            name=container_name,
-            profile="lovelace"
-        )
+        # container_name = 'lovelace-{}'.format(run_id)
+        # lxd.launch(
+        #     "images:ubuntu/xenial/i386",
+        #     name=container_name,
+        #     profile="lovelace"
+        # )
 
         # lxd._run(["lxc", "exec", container_name, "--", "mkdir", "/lovelace/"], timeout=5)
 
