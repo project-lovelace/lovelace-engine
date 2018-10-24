@@ -1,4 +1,5 @@
 import os
+import subprocess
 from subprocess import Popen, PIPE, STDOUT
 import logging
 
@@ -144,7 +145,7 @@ def execute(container, command_line, mode="non-interactive", env=None):
     logger.debug("Executing command `{:}` in Linux container {:s} (mode={:}, env={:})..."
                  .format(command_line, container, mode, env))
 
-    command = ["lxc", "exec", container, "--mode={}".format(mode)]
+    command = ["lxc", "exec", "--verbose", "--debug", container, "--mode={}".format(mode)]
     if env:
         command.append("--env")
         command.append(env)
@@ -220,30 +221,34 @@ def profile_delete(name, remote=None):
     return _run(command)
 
 
-def _run(command_args, timeout=100):
+def _run(command_args, timeout=5):
     logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
 
-    process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
-    process.wait(timeout)
-    retval = process.poll()
-    logger.debug("Return value: {:}".format(retval))
-
-    if process.stdout:
-        logger.debug("process.stdout:")
-        for line in process.stdout:
-            logger.debug("{:}".format(line))
-
-    # if retval != 0:
-    #     raise LXDError
-
-    return process
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
+            process.wait(timeout)
+            retval = process.poll()
+            logger.debug("Return value: {:}".format(retval))
+        except subprocess.TimeoutExpired as e:
+            logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
+            continue
+        else:  # success
+            if process.stdout:
+                logger.debug("process.stdout:")
+                for line in process.stdout:
+                    logger.debug("{:}".format(line))
+            return process
+    else:  # all attempts failed.
+        logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
 
 
 def _stdout_to_str(text_io_wrapper):
     line = text_io_wrapper.readline()
     total = ""
     while line:
-        logger.debug(line) 
+        logger.debug(line)
         print(line, end="")
         line = text_io_wrapper.readline()
         total += line
