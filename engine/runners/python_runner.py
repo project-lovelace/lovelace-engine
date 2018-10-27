@@ -50,7 +50,7 @@ class PythonRunner(AbstractRunner):
         p_info['max_mem_usage'] = output_dict['max_mem_usage']
 
         logger.debug("Finished running user code.")
-        logger.debug("runtime: %g, max_mem_usage: %g".format(p_info['runtime'], p_info['max_mem_usage']))
+        logger.debug("runtime: {:g} s, max_mem_usage: {:g} kB".format(p_info['runtime'], p_info['max_mem_usage']))
 
         util.delete_file(input_pickle)
         util.delete_file(output_pickle)
