@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import datetime
 
 # Config applies to loggers created in modules accessed from this module
 # Logger must loaded before importing other modules that rely on this logger,
@@ -26,11 +27,12 @@ os.chdir(cwd)
 class SubmitResource(object):
     def __init__(self):
         self.pid = os.getpid()
-        self.container_name = 'lovelace-{:d}'.format(self.pid)
+        self.container_image = "lovelace-container"
+        self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         logger.info("Launching Linux container {:s} (pid={:d})..."
             .format(self.container_name, self.pid))
-        lxd.launch("images:ubuntu/xenial/i386", name=self.container_name, profile="lovelace")
+        lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
     # TODO: Need to figure out how to stop and delete the containers on exit. The current
     # problem is that it crashes upon calling __del__ due to e.g. SIGKILL because Python
