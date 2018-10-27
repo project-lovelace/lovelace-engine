@@ -118,6 +118,13 @@ class SubmitResource(object):
             logger.debug("User answer: {:}".format(user_answer))
             logger.debug("Process info: {:}".format(process_info))
 
+            if 'USER_GENERATED_FILES' in tc.input:
+                for user_generated_filename in tc.input['USER_GENERATED_FILES']:
+                    container_filepath = "/root/{:}".format(user_generated_filename)
+                    logger.debug("Pulling user generated file from container {:}{:}"
+                            .format(self.container_name, container_filepath))
+                    lxd.file_pull(self.container_name, container_filepath, user_generated_filename)
+
             passed = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
