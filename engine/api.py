@@ -79,9 +79,9 @@ class SubmitResource(object):
         test_cases = []
         for i, test_type in enumerate(test_case_type_enum):
             for j in range(test_type.multiplicity):
-                logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})...".format(
-                    len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
-                test_cases.append(problem.generate_input(test_type))
+                logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
+                    .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
+                test_cases.append(problem.generate_test_case(test_type))
 
         num_passes = 0  # Number of test cases passed.
         num_cases = len(test_cases)
@@ -124,9 +124,7 @@ class SubmitResource(object):
             test_case_details.append({
                 'testCaseType': tc.test_type.test_name,
                 'inputString': str(input_tuple),
-                'outputString': user_answer,
-                'inputDict': tc.input,
-                'outputDict': tc.output,  # TODO: This is our solution. We should be using the user's solution.
+                'outputString': str(user_answer),
                 'passed': passed,
                 'processInfo': process_info
             })

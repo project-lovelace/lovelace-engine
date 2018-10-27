@@ -32,10 +32,8 @@ class PythonRunner(AbstractRunner):
         lxd.execute(container_name, command)
 
         p_info = {
-            'returnCode': 0,
-            'utime': 0,
-            'stime': 0,
-            'maxrss': 0,
+            'runtime': 0,
+            'max_mem_usage': 0
         }
 
         output_pickle = '{}.output.pickle'.format(run_id)
@@ -48,12 +46,11 @@ class PythonRunner(AbstractRunner):
             output_dict = pickle.load(f)
 
         user_output = output_dict['user_output']
-        p_info['utime'] = output_dict['runtime']
-        p_info['maxrss'] = output_dict['max_mem_usage']
+        p_info['runtime'] = output_dict['runtime']
+        p_info['max_mem_usage'] = output_dict['max_mem_usage']
 
-        logger.debug("Finished running user code. Return code %d.", p_info['returnCode'])
-        logger.debug("utime: %f, stime: %f", p_info['utime'], p_info['stime'])
-        logger.debug("maxrss: %d kB", p_info['maxrss'])  # resource
+        logger.debug("Finished running user code.")
+        logger.debug("runtime: %g, max_mem_usage: %g".format(p_info['runtime'], p_info['max_mem_usage']))
 
         util.delete_file(input_pickle)
         util.delete_file(output_pickle)
