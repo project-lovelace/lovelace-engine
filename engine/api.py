@@ -68,6 +68,7 @@ class SubmitResource(object):
             test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
             static_resources = []
             problem_dir = problem_name
+
             for resource_file_name in problem.STATIC_RESOURCES:
                 from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
                 to_path = os.path.join(cwd, resource_file_name)
@@ -76,6 +77,10 @@ class SubmitResource(object):
 
                 shutil.copyfile(from_path, to_path)
                 static_resources.append(to_path)
+
+                container_path = "/root/{:}".format(resource_file_name)
+                logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, container_path))
+                lxd.file_push(self.container_name, from_path, container_path)
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -101,6 +106,10 @@ class SubmitResource(object):
 
                     shutil.copyfile(resource_path, destination_path)
                     dynamic_resources.append(destination_path)
+
+                    container_path = "/root/{:}".format(dynamic_resource_filename)
+                    logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, target_path))
+                    lxd.file_push(self.container_name, resource_path, container_path)
 
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
