@@ -66,16 +66,16 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
             test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
-            resources = []
+            static_resources = []
             problem_dir = problem_name
-            for resource_file_name in problem.RESOURCES:
+            for resource_file_name in problem.STATIC_RESOURCES:
                 from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
                 to_path = os.path.join(cwd, resource_file_name)
 
-                logger.debug("Copying resource from {:s} to {:s}".format(from_path, to_path))
+                logger.debug("Copying static resource from {:s} to {:s}".format(from_path, to_path))
 
                 shutil.copyfile(from_path, to_path)
-                resources.append(to_path)
+                static_resources.append(to_path)
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -90,17 +90,17 @@ class SubmitResource(object):
         test_case_details = []  # List of dicts each containing the details of a particular test case.
 
         for i, tc in enumerate(test_cases):
-            test_case_resource = tc.input.get('dataset_filename')
-            if test_case_resource:
-                resource_path = os.path.join(cwd, '..', 'resources', test_case_resource)
-                resource_filename = os.path.basename(resource_path)
-                destination_path = os.path.join(cwd, resource_filename)
+            if 'DYNAMIC_RESOURCES' in tc.input:
+                dynamic_resources = []
+                for dynamic_resource_filename in tc.input['DYNAMIC_RESOURCES']:
+                    resource_path = os.path.join(cwd, '..', 'resources', problem_dir, dynamic_resource_filename)
+                    destination_path = os.path.join(cwd, dynamic_resource_filename)
 
-                logger.debug("Copying test case resource from {:s} to {:s}"
-                    .format(resource_path, destination_path))
+                    logger.debug("Copying test case resource from {:s} to {:s}"
+                        .format(resource_path, destination_path))
 
-                shutil.copyfile(resource_path, destination_path)
-                resources.append(destination_path)
+                    shutil.copyfile(resource_path, destination_path)
+                    dynamic_resources.append(destination_path)
 
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
@@ -131,6 +131,12 @@ class SubmitResource(object):
                 'processInfo': process_info
             })
 
+            if 'DYNAMIC_RESOURCES' in tc.input:
+                for dynamic_resource_path in dynamic_resources:
+                    logger.debug("Deleting dynamic resource: {:s}".format(dynamic_resource_path))
+                    os.remove(dynamic_resource_path)
+
+
         logger.info("Passed %d/%d test cases.", num_passes, num_cases)
 
         resp_dict = {
@@ -147,8 +153,8 @@ class SubmitResource(object):
         util.delete_file(code_filename)
         logger.debug("User code file deleted: {:s}".format(code_filename))
 
-        for file_path in resources:
-            logging.debug("Deleting resource {:s}".format(file_path))
+        for file_path in static_resources:
+            logging.debug("Deleting static resource {:s}".format(file_path))
             os.remove(file_path)
 
 
