@@ -17,7 +17,7 @@ with open(input_pickle, mode='rb') as f:
 tracemalloc.start()
 t1 = time.time()
 
-user_output = user_module.solution(*input_params)
+user_output = user_module.$FUNCTION_NAME(*input_params)
 
 t2 = time.time()
 _, max_mem_usage = tracemalloc.get_traced_memory()

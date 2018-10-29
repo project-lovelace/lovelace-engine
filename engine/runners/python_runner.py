@@ -1,6 +1,7 @@
 import logging
 import pickle
 import shutil
+import fileinput
 
 import engine.util as util
 from .abstract_runner import AbstractRunner
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class PythonRunner(AbstractRunner):
-    def run(self, container_name, code_filename, input_tuple):
+    def run(self, container_name, code_filename, function_name, input_tuple):
         logger.debug("Running {:s} with input {:}".format(code_filename, input_tuple))
 
         run_id = code_filename.split('.')[0]
@@ -21,6 +22,13 @@ class PythonRunner(AbstractRunner):
 
         runner_file = "{}.run.py".format(run_id)
         shutil.copy("run_it.py", runner_file)
+
+        # Replace "$FUNCTION_NAME" in run_it.py with function name to execute from
+        # the problem module.
+        logger.info("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
+        with fileinput.FileInput(runner_file, inplace=True) as f:
+            for line in f:
+                print(line.replace("$FUNCTION_NAME", function_name), end='')
 
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name

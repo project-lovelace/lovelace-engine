@@ -66,8 +66,9 @@ class SubmitResource(object):
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
             test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
-            static_resources = []
+            function_name = problem.FUNCTION_NAME
             problem_dir = problem_name
+            static_resources = []
 
             for resource_file_name in problem.STATIC_RESOURCES:
                 from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
@@ -114,7 +115,8 @@ class SubmitResource(object):
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
 
-            user_answer, process_info = PythonRunner().run(self.container_name, code_filename, input_tuple)
+            user_answer, process_info = PythonRunner().run(self.container_name, code_filename, function_name, input_tuple)
+
             logger.debug("User answer: {:}".format(user_answer))
             logger.debug("Process info: {:}".format(process_info))
 
