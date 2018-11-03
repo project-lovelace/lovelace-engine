@@ -18,7 +18,7 @@ import falcon
 
 import engine.util as util
 from engine.simple_lxd import simple_lxd as lxd
-from engine.runners.python_runner import PythonRunner
+from engine.runners.python_runner import PythonRunner, FilePushError, FilePullError, EngineExecutionError
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
@@ -115,7 +115,25 @@ class SubmitResource(object):
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
 
-            user_answer, process_info = PythonRunner().run(self.container_name, code_filename, function_name, input_tuple)
+            try:
+                user_answer, process_info = PythonRunner().run(self.container_name, code_filename, function_name, input_tuple)
+            except (FilePushError, FilePullError) as e:
+                logger.error("File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500.")
+
+                resp_dict = {'error': "{:}".format(e)}
+                resp.status = falcon.HTTP_500
+                resp.set_header('Access-Control-Allow-Origin', '*')
+                resp.body = json.dumps(resp_dict)
+                return
+            except EngineExecutionError as e:
+                logger.error("Return code from executing user code in LXD container is nonzero. Returning falcon HTTP 400.")
+
+                resp_dict = {'error': "{:}".format(e)}
+                resp.status = falcon.HTTP_400
+                resp.set_header('Access-Control-Allow-Origin', '*')
+                resp.body = json.dumps(resp_dict)
+                return
+
 
             logger.debug("User answer: {:}".format(user_answer))
             logger.debug("Process info: {:}".format(process_info))
