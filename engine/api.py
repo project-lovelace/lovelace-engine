@@ -34,17 +34,12 @@ class SubmitResource(object):
             .format(self.container_name, self.pid))
         lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
-    # TODO: Need to figure out how to stop and delete the containers on exit. The current
-    # problem is that it crashes upon calling __del__ due to e.g. SIGKILL because Python
-    # is trying to shut everything down including logging, so the logging functions
-    # actually end up crashing Python and we never get to stop and delete the containers.
-    # def __del__(self):
-        # logging.shutdown()
-        # logger.info("Stopping Linux container {:s}...".format(self.container_name))
-        # lxd.stop(self.container_name)
-
-        # logger.info("Deleting Linux container {:s}...".format(self.container_name))
-        # lxd.delete(self.container_name)
+    # This doesn't actually stop and delete the LXD containers if SIGKILL or SIGTERM was sent
+    # as I think Python shuts down too quickly. TODO: Figure out how to unconditionally stop
+    # and delete orphaned LXD containers.
+    def __del__(self):
+        lxd.stop(self.container_name, log=False)
+        lxd.delete(self.container_name, log=False)
 
     def on_post(self, req, resp):
         """Handle POST requests."""

@@ -85,12 +85,13 @@ def file_push(container, source_path, target_path,
     return _run(command)
 
 
-def stop(container):
+def stop(container, log=True):
     """Stop running containers.
     Syntax: lxc stop [<remote>:]<container> [[<remote>:]<container>...]
     :return: str
     """
-    logger.debug("Stopping Linux container {:s}...".format(container))
+    if log:
+        logger.debug("Stopping Linux container {:s}...".format(container))
 
     command = ["lxc", "stop"]
     if type(container) is str:
@@ -98,16 +99,17 @@ def stop(container):
     elif type(container) is list:
         for c in container:
             command.append(c)
-    return _run(command)
+    return _run(command, log=log)
 
 
-def delete(container):
+def delete(container, log=True):
     """Delete containers and snapshots.
     Syntax: lxc delete [<remote>:]<container>[/<snapshot>]
         [[<remote>:]<container>[/<snapshot>]...]
     :return: str
     """
-    logger.debug("Deleting Linux container {:s}...".format(container))
+    if log:
+        logger.debug("Deleting Linux container {:s}...".format(container))
 
     command = ["lxc", "delete"]
     if type(container) is str:
@@ -115,7 +117,7 @@ def delete(container):
     elif type(container) is list:
         for c in container:
             command.append(c)
-    return _run(command)
+    return _run(command, log=log)
 
 
 def execute(container, command_line, mode="non-interactive", env=None):
@@ -133,7 +135,8 @@ def execute(container, command_line, mode="non-interactive", env=None):
     logger.debug("Executing command `{:}` in Linux container {:s} (mode={:}, env={:})..."
                  .format(command_line, container, mode, env))
 
-    command = ["lxc", "exec", "--verbose", "--debug", container, "--mode={}".format(mode)]
+    command = ["lxc", "exec", container, "--mode={}".format(mode)]
+    # command = ["lxc", "exec", "--verbose", "--debug", container, "--mode={}".format(mode)]
     if env:
         command.append("--env")
         command.append(env)
@@ -209,8 +212,13 @@ def profile_delete(name, remote=None):
     return _run(command)
 
 
-def _run(command_args, timeout=60):
-    logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
+def _run(command_args, timeout=60, log=True):
+    # We have a flag for logging because the API destructor calls lxd stop and lxd delete, which may
+    # be called at the same time as other stuff shuttind down and typically the logging module is
+    # shut down before we can stop and delete the containers so by setting log=False we can still
+    # stop and delete the containers from a destructor.
+    if log:
+        logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
 
     max_attempts = 3
     for attempt in range(max_attempts):
@@ -219,21 +227,23 @@ def _run(command_args, timeout=60):
             process.wait(timeout)
 
             retval = process.poll()
-            if retval != 0:
+            if retval != 0 and log:
                 logger.warning("Return value: {:}".format(retval))
         except subprocess.TimeoutExpired as e:
-            logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
+            if log:
+                logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
             continue
         else:  # success
             retval = process.poll()
             stdout_str = process.stdout.read()
 
-            if len(stdout_str.strip()) > 0:
+            if len(stdout_str.strip()) > 0 and log:
                 logger.debug("stdout+err:\n{:}".format(stdout_str.strip()))
 
             return process, retval, stdout_str
     else:  # all attempts failed.
-        logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
+        if log:
+            logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
 
 
 def _stdout_to_str(text_io_wrapper):
