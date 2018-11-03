@@ -10,6 +10,21 @@ from ..simple_lxd import simple_lxd as lxd
 logger = logging.getLogger(__name__)
 
 
+class FilePushError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class EngineExecutionError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class FilePullError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class PythonRunner(AbstractRunner):
     def run(self, container_name, code_filename, function_name, input_tuple):
         logger.debug("Running {:s} with input {:}".format(code_filename, input_tuple))
@@ -33,13 +48,21 @@ class PythonRunner(AbstractRunner):
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name
             target_path = "/root/{}".format(file_name)
-            lxd.file_push(container_name, source_path, target_path)
+            _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
+
+            if push_retval != 0:
+                raise FilePushError(push_stdout)
 
         runner_path = "/root/{}".format(runner_file)
         command = ['python3', runner_path]
-        lxd.execute(container_name, command)
+        _, exec_retval, exec_stdout = lxd.execute(container_name, command)
+
+        if exec_retval != 0:
+            raise EngineExecutionError(exec_stdout)
 
         p_info = {
+            'return_value': exec_retval,
+            'stdout': exec_stdout,
             'runtime': 0,
             'max_mem_usage': 0
         }
@@ -48,7 +71,10 @@ class PythonRunner(AbstractRunner):
         source_path = '/root/{}'.format(output_pickle)
         target_path = output_pickle
 
-        lxd.file_pull(container_name, source_path, target_path)
+        _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
+
+        if pull_retval != 0:
+            raise FilePullError(pull_stdout)
 
         with open(output_pickle, mode='rb') as f:
             output_dict = pickle.load(f)
