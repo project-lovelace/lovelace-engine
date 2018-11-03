@@ -51,6 +51,9 @@ class PythonRunner(AbstractRunner):
             _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
 
             if push_retval != 0:
+                util.delete_file(code_filename)
+                util.delete_file(runner_file)
+                util.delete_file(input_pickle)
                 raise FilePushError(push_stdout)
 
         runner_path = "/root/{}".format(runner_file)
@@ -58,6 +61,9 @@ class PythonRunner(AbstractRunner):
         _, exec_retval, exec_stdout = lxd.execute(container_name, command)
 
         if exec_retval != 0:
+            util.delete_file(code_filename)
+            util.delete_file(runner_file)
+            util.delete_file(input_pickle)
             raise EngineExecutionError(exec_stdout)
 
         p_info = {
@@ -74,6 +80,9 @@ class PythonRunner(AbstractRunner):
         _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
 
         if pull_retval != 0:
+            util.delete_file(code_filename)
+            util.delete_file(runner_file)
+            util.delete_file(input_pickle)
             raise FilePullError(pull_stdout)
 
         with open(output_pickle, mode='rb') as f:
