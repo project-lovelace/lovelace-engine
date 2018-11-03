@@ -61,6 +61,7 @@ def read_list_from_file(filename):
 
 
 def delete_file(filename):
+    logger.info("Deleting file: {:s}".format(filename))
     os.remove(filename)
     return
 
