@@ -81,20 +81,8 @@ def file_push(container, source_path, target_path,
         command.append(mode)
     command.append(source_path)
     command.append(container + target_path)
-    push_proc = _run(command)
-    _stdout_to_str(push_proc.stdout)
 
-    # TODO clean up this function, add max iterations
-#    check_if_pushed_cmd = ["test", "-f", target_path]
-#    exit_code = 1
-#    while exit_code == 1:
-#        logger.debug("Testing if file was pushed...")
-#        push_proc = _run(command)
-#        exec_proc = execute(container, check_if_pushed_cmd)
-#        exit_code = exec_proc.poll()
-#        _stdout_to_str(exec_proc.stdout)
-
-    return push_proc
+    return _run(command)
 
 
 def stop(container):
@@ -221,7 +209,7 @@ def profile_delete(name, remote=None):
     return _run(command)
 
 
-def _run(command_args, timeout=5):
+def _run(command_args, timeout=60):
     logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
 
     max_attempts = 3
@@ -229,17 +217,21 @@ def _run(command_args, timeout=5):
         try:
             process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
             process.wait(timeout)
+
             retval = process.poll()
-            logger.debug("Return value: {:}".format(retval))
+            if retval != 0:
+                logger.warning("Return value: {:}".format(retval))
         except subprocess.TimeoutExpired as e:
             logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
             continue
         else:  # success
-            if process.stdout:
-                logger.debug("process.stdout:")
-                for line in process.stdout:
-                    logger.debug("{:}".format(line))
-            return process
+            retval = process.poll()
+            stdout_str = process.stdout.read()
+
+            if len(stdout_str.strip()) > 0:
+                logger.debug("stdout+err:\n{:}".format(stdout_str.strip()))
+
+            return process, retval, stdout_str
     else:  # all attempts failed.
         logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
 
@@ -254,15 +246,3 @@ def _stdout_to_str(text_io_wrapper):
         total += line
     return total
 
-
-if __name__ == '__main__':
-    proc = launch("images:ubuntu/xenial/i386", "my-py-cont")
-    _stdout_to_str(proc.stdout)
-    proc = file_push("my-py-cont", "_hello.py", "/tmp/hello.py")
-    _stdout_to_str(proc.stdout)
-    proc = execute("my-py-cont", ["python3", "/tmp/hello.py"])
-    _stdout_to_str(proc.stdout)
-    proc = stop("my-py-cont")
-    _stdout_to_str(proc.stdout)
-    proc = delete("my-py-cont")
-    _stdout_to_str(proc.stdout)
