@@ -126,7 +126,7 @@ class SubmitResource(object):
                 resp.body = json.dumps(resp_dict)
                 return
             except EngineExecutionError as e:
-                logger.error("Return code from executing user code in LXD container is nonzero. Returning falcon HTTP 400.")
+                logger.warning("Return code from executing user code in LXD container is nonzero. Returning falcon HTTP 400.")
 
                 resp_dict = {'error': "{:}".format(e)}
                 resp.status = falcon.HTTP_400
