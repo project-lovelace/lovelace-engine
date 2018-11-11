@@ -104,7 +104,7 @@ class SubmitResource(object):
                     dynamic_resources.append(destination_path)
 
                     container_path = "/root/{:}".format(dynamic_resource_filename)
-                    logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, target_path))
+                    logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, container_path))
                     lxd.file_push(self.container_name, resource_path, container_path)
 
             input_tuple = tc.input_tuple()
