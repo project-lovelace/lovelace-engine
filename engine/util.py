@@ -3,8 +3,11 @@
 import hashlib
 import os
 import time
+import logging
 
 from .simple_lxd import simple_lxd as lxd
+
+logger = logging.getLogger(__name__)
 
 
 def write_str_to_file(string, extension='', encoding='utf-8'):
@@ -58,11 +61,13 @@ def read_list_from_file(filename):
 
 
 def delete_file(filename):
+    logger.info("Deleting file: {:s}".format(filename))
     os.remove(filename)
     return
 
 
 def configure_lxd() -> None:
+    logger.debug("Configuring Linux container profile...")
     ll_profile = "lovelace"
     lxd.profile_delete(ll_profile)
     lxd.profile_copy("default", ll_profile)

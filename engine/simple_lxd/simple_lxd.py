@@ -1,5 +1,9 @@
 import os
+import subprocess
 from subprocess import Popen, PIPE, STDOUT
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LXDError(Exception):
@@ -20,6 +24,9 @@ def launch(image, name, ephemeral=False, profile=None, config=None,
     :param instance_type:
     :return: str
     """
+    logger.debug("Launching Linux container (image={:s}, name={:s}, ephemeral={:}, profile={:}, config={:}," \
+                 " instance_type={:})...".format(image, name, ephemeral, profile, config, instance_type))
+
     command = ["lxc", "launch", image, name]
     if ephemeral:
         command.append("--ephemeral")
@@ -41,6 +48,8 @@ def file_pull(container, source_path, target_path):
         [[<remote>:]<container>/<path>...] <target path>
     :return:
     """
+    logger.debug("Pulling file {:s} from Linux container {:s} to {:s}...".format(source_path, container, target_path))
+
     command = ["lxc", "file", "pull"]
     from_path = os.path.join(container, source_path)
     command.append(container + from_path)
@@ -55,7 +64,12 @@ def file_push(container, source_path, target_path,
         [<source path>...] [<remote>:]<container>/<path>
     :return: str
     """
-    command = ["lxc", "file", "push", "--force-local", "--verbose"]
+    logger.debug("Pushing file {:s} into Linux container {:s} in {:s} (uid={:}, gid={:}, mode={:})..."
+                 .format(source_path, container, target_path, uid, gid, mode))
+
+    # command = ["lxc", "file", "push", "--force-local", "--verbose"]
+    command = ["lxc", "file", "push", "--debug", "--verbose"]
+
     if uid:
         command.append("--uid=")
         command.append(uid)
@@ -67,48 +81,43 @@ def file_push(container, source_path, target_path,
         command.append(mode)
     command.append(source_path)
     command.append(container + target_path)
-    push_proc = _run(command)
-    _stdout_to_str(push_proc.stdout)
 
-    # TODO clean up this function, add max iterations
-    check_if_pushed_cmd = ["test", "-f", target_path]
-    exit_code = 1
-    while exit_code == 1:
-        push_proc = _run(command)
-        exec_proc = execute(container, check_if_pushed_cmd)
-        exit_code = exec_proc.poll()
-        _stdout_to_str(exec_proc.stdout)
-
-    return push_proc
+    return _run(command)
 
 
-def stop(container):
+def stop(container, log=True):
     """Stop running containers.
     Syntax: lxc stop [<remote>:]<container> [[<remote>:]<container>...]
     :return: str
     """
+    if log:
+        logger.debug("Stopping Linux container {:s}...".format(container))
+
     command = ["lxc", "stop"]
     if type(container) is str:
         command.append(container)
     elif type(container) is list:
         for c in container:
             command.append(c)
-    return _run(command)
+    return _run(command, log=log)
 
 
-def delete(container):
+def delete(container, log=True):
     """Delete containers and snapshots.
     Syntax: lxc delete [<remote>:]<container>[/<snapshot>]
         [[<remote>:]<container>[/<snapshot>]...]
     :return: str
     """
+    if log:
+        logger.debug("Deleting Linux container {:s}...".format(container))
+
     command = ["lxc", "delete"]
     if type(container) is str:
         command.append(container)
     elif type(container) is list:
         for c in container:
             command.append(c)
-    return _run(command)
+    return _run(command, log=log)
 
 
 def execute(container, command_line, mode="non-interactive", env=None):
@@ -123,7 +132,11 @@ def execute(container, command_line, mode="non-interactive", env=None):
     :param env:
     :return:
     """
+    logger.debug("Executing command `{:}` in Linux container {:s} (mode={:}, env={:})..."
+                 .format(command_line, container, mode, env))
+
     command = ["lxc", "exec", container, "--mode={}".format(mode)]
+    # command = ["lxc", "exec", "--verbose", "--debug", container, "--mode={}".format(mode)]
     if env:
         command.append("--env")
         command.append(env)
@@ -140,6 +153,8 @@ def profile_create(name, remote=None):
     :param name:
     :return:
     """
+    logger.debug("Creating Linux container profile {:} (remote={:})...".format(name))
+
     profile = "{}:{}".format(remote, name) if remote else name
     command = ["lxc", "profile", "create", profile]
     return _run(command)
@@ -155,6 +170,9 @@ def profile_copy(src_name, dst_name, src_remote=None, dst_remote=None):
     :param dst_remote:
     :return:
     """
+    logger.debug("Copying Linux container profile {:s} to {:s} (src_remote={:}, dst_remote={:})..."
+                 .format(src_name, dst_name, src_remote, dst_remote))
+
     src = "{}:{}".format(src_remote, src_name) if src_remote else src_name
     dst = "{}:{}".format(dst_remote, dst_name) if dst_remote else dst_name
     command = ["lxc", "profile", "copy", src, dst]
@@ -171,6 +189,9 @@ def profile_set(name, key, value, remote=None):
     :param remote:
     :return:
     """
+    logger.debug("Setting Linux container profile {:s} (key={:}, value={:}, remote={:})..."
+                 .format(name, key, value, remote))
+
     profile = "{}:{}".format(remote, name) if remote else name
     command = ["lxc", "profile", "set", profile, key, value]
     return _run(command)
@@ -184,41 +205,54 @@ def profile_delete(name, remote=None):
     :param remote:
     :return:
     """
+    logger.debug("Deleting Linux container profile {:s} (remote={:})...".format(name, remote))
+
     profile = "{}:{}".format(remote, name) if remote else name
     command = ["lxc", "profile", "delete", profile]
     return _run(command)
 
 
-def _run(command_args, timeout=100):
-    process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
-    process.wait(timeout)
-    retval = process.poll()
-    print("Return value {} from command {}".format(retval, " ".join(command_args)))
-    for line in process.stdout:
-        print('\t{}'.format(line), end='')
-    # if retval != 0:
-    #     raise LXDError
-    return process
+def _run(command_args, timeout=60, log=True):
+    # We have a flag for logging because the API destructor calls lxd stop and lxd delete, which may
+    # be called at the same time as other stuff shuttind down and typically the logging module is
+    # shut down before we can stop and delete the containers so by setting log=False we can still
+    # stop and delete the containers from a destructor.
+    if log:
+        logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
+
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
+            process.wait(timeout)
+
+            retval = process.poll()
+            if retval != 0 and log:
+                logger.warning("Return value: {:}".format(retval))
+        except subprocess.TimeoutExpired as e:
+            if log:
+                logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
+            continue
+        else:  # success
+            retval = process.poll()
+            stdout_str = process.stdout.read()
+
+            if len(stdout_str.strip()) > 0 and log:
+                logger.debug("stdout+err:\n{:}".format(stdout_str.strip()))
+
+            return process, retval, stdout_str
+    else:  # all attempts failed.
+        if log:
+            logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
 
 
 def _stdout_to_str(text_io_wrapper):
     line = text_io_wrapper.readline()
     total = ""
     while line:
+        logger.debug(line)
         print(line, end="")
         line = text_io_wrapper.readline()
         total += line
     return total
 
-
-if __name__ == '__main__':
-    proc = launch("images:ubuntu/xenial/i386", "my-py-cont")
-    _stdout_to_str(proc.stdout)
-    proc = file_push("my-py-cont", "_hello.py", "/tmp/hello.py")
-    _stdout_to_str(proc.stdout)
-    proc = execute("my-py-cont", ["python3", "/tmp/hello.py"])
-    _stdout_to_str(proc.stdout)
-    proc = stop("my-py-cont")
-    _stdout_to_str(proc.stdout)
-    proc = delete("my-py-cont")
-    _stdout_to_str(proc.stdout)
