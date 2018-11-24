@@ -75,7 +75,7 @@ def configure_lxd() -> None:
     lxd.profile_set(ll_profile, "limits.cpu.allowance", "100%")
     lxd.profile_set(ll_profile, "limits.cpu.priority", "5")
     lxd.profile_set(ll_profile, "limits.disk.priority", "5")
-    lxd.profile_set(ll_profile, "limits.memory", "500MB")
+    lxd.profile_set(ll_profile, "limits.memory", "250MB")
     lxd.profile_set(ll_profile, "limits.memory.enforce", "hard")
     lxd.profile_set(ll_profile, "limits.memory.swap", "false")
     lxd.profile_set(ll_profile, "limits.processes", "100")
