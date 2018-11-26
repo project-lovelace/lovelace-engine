@@ -22,15 +22,17 @@ update-requirements:
 
 start-engine: stop-engine
 	# @echo "Starting the Lovelace Engine in the background..."
-	# $(PYTHON37) $(GUNICORN) --daemon --workers 1 --log-level info --preload --pid $(ENGINE_PID_FILE) --access-logfile /var/log/lovelace/gunicorn-access.log --error-logfile /var/log/lovelace/gunicorn-error.log --bind localhost:$(ENGINE_PORT) engine.api:app
+	# $(PYTHON37) $(GUNICORN) --daemon --workers 1 --log-level info ---access-logfile /var/log/lovelace/gunicorn-access.log --error-logfile /var/log/lovelace/gunicorn-error.log --preload --pid $(ENGINE_PID_FILE) --bind localhost:$(ENGINE_PORT) engine.api:app
 
 start-engine-fg: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."
-	$(PYTHON37) $(GUNICORN) --workers 1 --log-level debug --preload --bind localhost:$(ENGINE_PORT) engine.api:app
+	$(PYTHON37) $(GUNICORN) --workers 1 --log-level debug --timeout 600 --preload --reload --bind localhost:$(ENGINE_PORT) engine.api:app
 
 stop-engine:
 	@echo "Stopping the Lovelace Engine gracefully..."
 	if [ -a $(ENGINE_PID_FILE) ]; then kill -15 `cat $(ENGINE_PID_FILE)` ; sudo rm -f $(ENGINE_PID_FILE) ; fi;
+	@echo "Deleting linux containers by force..."
+	-lxc list -c n | grep lovelace | cut -d " " -f2 | xargs lxc delete --force
 
 clean:
 	@echo "Deleting old virtual environment..."

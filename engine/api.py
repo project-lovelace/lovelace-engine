@@ -140,7 +140,11 @@ class SubmitResource(object):
                             .format(self.container_name, container_filepath))
                     lxd.file_pull(self.container_name, container_filepath, user_generated_filename)
 
-            passed = problem.verify_user_solution(input_tuple, user_answer)
+            if user_answer[0] is None:
+                logger.debug("Looks like user's function returned None; the output: {}".format(user_answer))
+                passed = False
+            else:
+                passed = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input tuple:")

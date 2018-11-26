@@ -142,7 +142,7 @@ def execute(container, command_line, mode="non-interactive", env=None):
         command.append(env)
     command.append("--")
     command.extend(command_line)
-    return _run(command)
+    return _run(command, timeout=10)
 
 
 def profile_create(name, remote=None):
@@ -220,10 +220,13 @@ def _run(command_args, timeout=60, log=True):
     if log:
         logger.debug("Running command (timeout={:d}): {:s}".format(timeout, " ".join(command_args)))
 
-    max_attempts = 3
+    max_attempts = 1
     for attempt in range(max_attempts):
         try:
             process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
+
+            # Python Docs: this will deadlock when using stdout=PIPE or stderr=PIPE and the child process generates enough output to a pipe such that it blocks waiting for the OS pipe buffer to accept more data.
+            # I don't this was an issue for us yet, but something to keep in mind.
             process.wait(timeout)
 
             retval = process.poll()
@@ -232,7 +235,11 @@ def _run(command_args, timeout=60, log=True):
         except subprocess.TimeoutExpired as e:
             if log:
                 logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
-            continue
+            # continue
+            # TODO: fix this case where programs timeout.
+            if log:
+                logger.debug("Returning after user code timed out.")
+            return process, -1, "Your program took too long to run (more than 10 seconds)."
         else:  # success
             retval = process.poll()
             stdout_str = process.stdout.read()
