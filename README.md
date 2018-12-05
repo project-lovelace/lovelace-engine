@@ -1,3 +1,3 @@
-# lovelace-engine
+# Project Lovelace engine
 
-Under construction for alpha2018...
+Project Lovelace's automated tester of code submissions for computational science education.
