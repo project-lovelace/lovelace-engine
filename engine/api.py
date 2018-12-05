@@ -71,7 +71,14 @@ class SubmitResource(object):
 
                 logger.debug("Copying static resource from {:s} to {:s}".format(from_path, to_path))
 
-                shutil.copyfile(from_path, to_path)
+                try:
+                    shutil.copyfile(from_path, to_path)
+                except Exception:
+                    resp.status = falcon.HTTP_500
+                    resp.set_header('Access-Control-Allow-Origin', '*')
+                    resp.body = json.dumps({'error': '500 Internal server error: Engine failed to find a resource.'})
+                    return
+
                 static_resources.append(to_path)
 
                 container_path = "/root/{:}".format(resource_file_name)
