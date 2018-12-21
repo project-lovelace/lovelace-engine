@@ -8,17 +8,10 @@ GUNICORN := /root/anaconda3/envs/lovelace_engine_env/bin/gunicorn
 
 prepare-venv: clean
 	@echo "Preparing virtual environment..."
-	virtualenv -p python3.6 --verbose --prompt='(lovelace-engine) ' env
-	env/bin/pip install -r requirements.txt
+	@echo "Not implemented..."
 
 update-requirements:
 	@echo "Updating environment requirements..."
-	cp requirements.txt requirements.txt.old
-	env/bin/pip freeze > requirements.txt
-	sed -i '/pkg-resources==0.0.0/d' requirements.txt  # Ubuntu 16.04 bug causes this erroneous requirement
-	@echo "Applied the following changes to requirements.txt..."
-	diff requirements.txt.old requirements.txt ; [ $$? -eq 1 ]  # diff returns non-zero codes
-	rm -f requirements.txt.old
 
 start-engine: stop-engine
 	# @echo "Starting the Lovelace Engine in the background..."
@@ -36,4 +29,4 @@ stop-engine:
 
 clean:
 	@echo "Deleting old virtual environment..."
-	rm -rf ./env
+	@echo "Not implemented..."
