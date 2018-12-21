@@ -14,10 +14,6 @@ update-requirements:
 	@echo "Updating environment requirements..."
 
 start-engine: stop-engine
-	# @echo "Starting the Lovelace Engine in the background..."
-	# $(PYTHON37) $(GUNICORN) --daemon --workers 1 --log-level info ---access-logfile /var/log/lovelace/gunicorn-access.log --error-logfile /var/log/lovelace/gunicorn-error.log --preload --pid $(ENGINE_PID_FILE) --bind localhost:$(ENGINE_PORT) engine.api:app
-
-start-engine-fg: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."
 	$(PYTHON37) $(GUNICORN) --workers 1 --log-level debug --timeout 600 --preload --reload --bind localhost:$(ENGINE_PORT) engine.api:app
 
