@@ -210,6 +210,22 @@ def profile_delete(name, remote=None):
     profile = "{}:{}".format(remote, name) if remote else name
     command = ["lxc", "profile", "delete", profile]
     return _run(command)
+    
+
+def profile_device_remove(name, device, remote=None):
+    """
+    Remove a device from a profile.
+    Syntax: lxc profile device remove [<remote>:]<profile> <name>
+    :param name:
+    :param device:
+    :param remote:
+    :return:
+    """
+    logger.debug("Deleting device {:s} from profile {:s} (remote={:})...".format(device, name, remote))
+
+    profile = "{}:{}".format(remote, name) if remote else name
+    command = ["lxc", "profile", "device", "remove", profile, device]
+    return _run(command)
 
 
 def _run(command_args, timeout=60, log=True):

@@ -27,11 +27,11 @@ os.chdir(cwd)
 class SubmitResource(object):
     def __init__(self):
         self.pid = os.getpid()
-        self.container_image = "lovelace-container"
+        self.container_image = "lovelace-image"
         self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
-        logger.info("Launching Linux container {:s} (pid={:d})..."
-            .format(self.container_name, self.pid))
+        logger.info("Launching Linux container {:s} (pid={:d}) from image {:s}..."
+            .format(self.container_name, self.pid, self.container_image))
         lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
     # This doesn't actually stop and delete the LXD containers if SIGKILL or SIGTERM was sent
@@ -117,8 +117,15 @@ class SubmitResource(object):
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
 
+            if language == 'python3':
+                runner = PythonRunner()
+            elif language == 'javascript':
+                runner = JavascriptRunner()
+            else:
+                raise Exception('Runner not found.')
+
             try:
-                user_answer, process_info = PythonRunner().run(self.container_name, code_filename, function_name, input_tuple)
+                user_answer, process_info = runner.run(self.container_name, code_filename, function_name, input_tuple)
             except (FilePushError, FilePullError) as e:
                 logger.error("File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500.")
 
@@ -229,7 +236,7 @@ def write_code_to_file(code, language):
         raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided in request.')
 
     decoded_code = str(base64.b64decode(code), 'utf-8')
-    extension = {'python3': '.py'}.get(language)
+    extension = {'python3': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
 
     logger.debug("User code saved in: {:s}".format(code_filename))

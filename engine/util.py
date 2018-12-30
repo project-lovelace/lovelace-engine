@@ -81,3 +81,4 @@ def configure_lxd() -> None:
     lxd.profile_set(ll_profile, "limits.processes", "100")
     lxd.profile_set(ll_profile, "security.nesting", "false")
     lxd.profile_set(ll_profile, "security.privileged", "false")
+    lxd.profile_device_remove(ll_profile, "eth0")
