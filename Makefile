@@ -21,7 +21,7 @@ stop-engine:
 	@echo "Stopping the Lovelace Engine gracefully..."
 	if [ -a $(ENGINE_PID_FILE) ]; then kill -15 `cat $(ENGINE_PID_FILE)` ; sudo rm -f $(ENGINE_PID_FILE) ; fi;
 	@echo "Deleting linux containers by force..."
-	-lxc list -c n | grep lovelace | cut -d " " -f2 | xargs lxc delete --force
+	-lxc list -c n | grep lovelace | cut -d " " -f2 | xargs --no-run-if-empty lxc delete --force
 
 test:
 	@echo "Make sure the engine is running!"
