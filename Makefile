@@ -23,6 +23,11 @@ stop-engine:
 	@echo "Deleting linux containers by force..."
 	-lxc list -c n | grep lovelace | cut -d " " -f2 | xargs lxc delete --force
 
+test:
+	@echo "Make sure the engine is running!"
+	@echo "Running tests..."
+	cd engine ; $(PYTHON37) -m unittest test_api.py
+
 clean:
 	@echo "Deleting old virtual environment..."
 	@echo "Not implemented..."
