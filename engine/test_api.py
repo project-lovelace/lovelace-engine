@@ -30,13 +30,16 @@ class TestApi(unittest.TestCase):
 
         return response_data
 
-    # def test_all_problems_python_success(self):
-    #     for solution_filename in os.listdir(self.solutions_dir):
-    #         if solution_filename.split('.')[1] == 'js':
-    #             return
-    #         result = self.submit_solution(solution_filename)
-    #         self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+    def test_all_problems_python_success(self):
+        for file_name in os.listdir(self.solutions_dir):
+            if file_name.split('.')[1] == 'js':
+                pass
+            print('Submitting {}!'.format(file_name))
+            result = self.submit_solution(file_name)
+            self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
 
     def test_all_problems_javascript_success(self):
-        result = self.submit_solution('rocket-science.js')
+        file_name = 'rocket-science.js'
+        print('Submitting {}!'.format(file_name))
+        result = self.submit_solution(file_name)
         self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
