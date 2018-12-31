@@ -19,6 +19,7 @@ import falcon
 import engine.util as util
 from engine.simple_lxd import simple_lxd as lxd
 from engine.runners.python_runner import PythonRunner, FilePushError, FilePullError, EngineExecutionError
+from engine.runners.javascript_runner import JavascriptRunner
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
@@ -46,7 +47,9 @@ class SubmitResource(object):
         # payload = parse_payload(req)
         payload = req.media
 
-        code_filename = write_code_to_file(payload['code'], payload['language'])
+        code = payload['code']
+        language = payload['language']
+        code_filename = write_code_to_file(code, language)
 
         # Fetch problem ID and load the correct problem module.
         problem_name = payload['problem'].replace('-', '_')
@@ -143,7 +146,6 @@ class SubmitResource(object):
                 resp.body = json.dumps(resp_dict)
                 return
 
-
             logger.debug("User answer: {:}".format(user_answer))
             logger.debug("Process info: {:}".format(process_info))
 
@@ -184,7 +186,6 @@ class SubmitResource(object):
                 for dynamic_resource_path in dynamic_resources:
                     logger.debug("Deleting dynamic resource: {:s}".format(dynamic_resource_path))
                     os.remove(dynamic_resource_path)
-
 
         logger.info("Passed %d/%d test cases.", num_passes, num_cases)
 
@@ -242,6 +243,7 @@ def write_code_to_file(code, language):
     logger.debug("User code saved in: {:s}".format(code_filename))
 
     return code_filename
+
 
 app = falcon.API()
 app.add_route('/submit', SubmitResource())

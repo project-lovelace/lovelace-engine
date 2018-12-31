@@ -15,7 +15,7 @@ output_pickle = '{}.output.pickle'.format(run_id)
 output_json = '{}.output.json'.format(run_id)
 
 with open(input_pickle, mode='rb') as f:
-    input_params = pickle.load(f)
+    params = pickle.load(f)
 
 func_call_str = '$FUNCTION_NAME(' + ', '.join([json.dumps(param) for param in params]) + ')'
 
@@ -27,12 +27,12 @@ fs.writeFileSync('{}', data);
 """.format(func_call_str, output_json)
 
 with open(code_file, mode='a') as f:
-	f.write(glue_code)
+    f.write(glue_code)
 
 subprocess.run(['node', code_file])
 
 with open(output_json, mode='r') as f:
-	user_output = json.loads(f.read())
+    user_output = json.loads(f.read())
 
 user_output = tuple(user_output) if type(user_output) is list else (user_output,)
 runtime = 999  # TODO: get runtime from the user's file

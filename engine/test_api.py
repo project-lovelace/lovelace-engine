@@ -5,21 +5,38 @@ import unittest
 
 import requests
 
-class TestApi(unittest.TestCase):
-    def test_all_problems(self):
-        for solution_filename in os.listdir('../solutions/'):
-            problem_name, extension = solution_filename.split(sep='.')
-            language = {'py': 'python3', 'jl': 'julia'}.get(extension)
-            with open('../solutions/' + solution_filename, 'r') as solution_file:
-                code = solution_file.read()
-            code_b64 = base64.b64encode(code.encode('utf-8')).decode('utf-8')
-            payload_dict = {
-                'problem': problem_name,
-                'language': language,
-                'code': code_b64,
-            }
-            payload_json = json.dumps(payload_dict)
-            resp = requests.post('http://localhost:14714/submit', data=payload_json)
-            resp_data = json.loads(resp.text)
-            self.assertTrue(resp_data['success'], 'Failed when submitting good solution for {}\n{}'.format(problem_name, json.dumps(resp_data, indent=4)))
 
+class TestApi(unittest.TestCase):
+    solutions_dir = '../solutions/'
+
+    def submit_solution(self, file_name):
+        solution_file_path = os.path.join(self.solutions_dir, file_name)
+        with open(solution_file_path, 'r') as solution_file:
+            code = solution_file.read()
+        code_b64 = base64.b64encode(code.encode('utf-8')).decode('utf-8')
+
+        problem_name, extension = file_name.split(sep='.')
+        language = {'py': 'python3', 'jl': 'julia', 'js': 'javascript'}.get(extension)
+
+        payload_dict = {
+            'problem': problem_name,
+            'language': language,
+            'code': code_b64,
+        }
+        payload_json = json.dumps(payload_dict)
+
+        response = requests.post('http://localhost:14714/submit', data=payload_json)
+        response_data = json.loads(response.text)
+
+        return response_data
+
+    # def test_all_problems_python_success(self):
+    #     for solution_filename in os.listdir(self.solutions_dir):
+    #         if solution_filename.split('.')[1] == 'js':
+    #             return
+    #         result = self.submit_solution(solution_filename)
+    #         self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+
+    def test_all_problems_javascript_success(self):
+        result = self.submit_solution('rocket-science.js')
+        self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
