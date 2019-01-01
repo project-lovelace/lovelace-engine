@@ -1,10 +1,7 @@
-import importlib
 import json
 import os
 import pickle
 import subprocess
-import time
-import tracemalloc
 
 run_id = os.path.basename(__file__).split('.')[0]
 
@@ -20,9 +17,21 @@ with open(input_pickle, mode='rb') as f:
 func_call_str = '$FUNCTION_NAME(' + ', '.join([json.dumps(param) for param in params]) + ')'
 
 glue_code = """
-let user_output = {}
+const timeStart = process.hrtime();
+let userOutput = {};
+const timeDiff = process.hrtime(timeStart);
+const runTime = timeDiff[0] + (timeDiff[1] / 1e9);
+
+const maxMemoryUsage = 0;
+
+const submissionData = {{ 
+  "userOutput": userOutput,
+  "runTime": runTime,
+  "maxMemoryUsage": maxMemoryUsage
+}};  // Double braces to avoid interfering with Python brace-based string formatting.
+
 const fs = require('fs');
-let data = JSON.stringify(user_output);
+let data = JSON.stringify(submissionData);
 fs.writeFileSync('{}', data);
 """.format(func_call_str, output_json)
 
@@ -32,16 +41,25 @@ with open(code_file, mode='a') as f:
 subprocess.run(['node', code_file])
 
 with open(output_json, mode='r') as f:
-    user_output = json.loads(f.read())
+    submission_data = json.loads(f.read())
 
-user_output = tuple(user_output) if type(user_output) is list else (user_output,)
-runtime = 999  # TODO: get runtime from the user's file
-max_mem_usage = 999999
+user_output = submission_data['userOutput']
+runtime = submission_data['runTime']
+max_mem_usage = submission_data['maxMemoryUsage']
+
+if type(user_output) is list \
+        and len(user_output) == 1 \
+        and user_output[0] is list:
+    user_output = (user_output[0],)  # Solution is a list
+elif type(user_output) is list:
+    user_output = tuple(user_output)  # Solution is a "multiple return"
+else:
+    user_output = (user_output,)  # Solution is a string or number
 
 output_dict = {
     'user_output': user_output,
     'runtime': runtime,
-    'max_mem_usage': max_mem_usage
+    'max_mem_usage': max_mem_usage,
 }
 
 with open(output_pickle, mode='wb') as f:

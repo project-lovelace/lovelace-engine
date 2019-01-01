@@ -120,7 +120,7 @@ class SubmitResource(object):
             input_tuple = tc.input_tuple()
             logger.debug("Input tuple: {:}".format(input_tuple))
 
-            if language == 'python3':
+            if language == 'python':
                 runner = PythonRunner()
             elif language == 'javascript':
                 runner = JavascriptRunner()
@@ -237,7 +237,7 @@ def write_code_to_file(code, language):
         raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided in request.')
 
     decoded_code = str(base64.b64decode(code), 'utf-8')
-    extension = {'python3': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
+    extension = {'python': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
 
     logger.debug("User code saved in: {:s}".format(code_filename))
