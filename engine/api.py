@@ -20,6 +20,7 @@ import engine.util as util
 from engine.simple_lxd import simple_lxd as lxd
 from engine.runners.python_runner import PythonRunner, FilePushError, FilePullError, EngineExecutionError
 from engine.runners.javascript_runner import JavascriptRunner
+from engine.runners.julia_runner import JuliaRunner
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
@@ -124,6 +125,8 @@ class SubmitResource(object):
                 runner = PythonRunner()
             elif language == 'javascript':
                 runner = JavascriptRunner()
+            elif language == 'julia':
+                runner = JuliaRunner()
             else:
                 raise Exception('Runner not found.')
 
@@ -160,13 +163,15 @@ class SubmitResource(object):
                 logger.debug("Looks like user's function returned None; the output: {}".format(user_answer))
                 passed = False
             else:
-                passed = problem.verify_user_solution(input_tuple, user_answer)
+                passed, expected = problem.verify_user_solution(input_tuple, user_answer)
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input tuple:")
             logger.debug("%s", input_tuple)
             logger.debug("User answer:")
             logger.debug("%s", user_answer)
+            logger.debug("Expected answer:")
+            logger.debug("%s", expected)
 
             if passed:
                 num_passes += 1
@@ -178,6 +183,7 @@ class SubmitResource(object):
                 'testCaseType': tc.test_type.test_name,
                 'inputString': str(input_tuple),
                 'outputString': str(user_answer),
+                'expectedString': str(expected),
                 'passed': passed,
                 'processInfo': process_info
             })
