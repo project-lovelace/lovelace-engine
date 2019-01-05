@@ -4,6 +4,8 @@ import pickle
 
 run_id = os.path.basename(__file__).split('.')[0]
 
+code_file = '{}.jl'.format(run_id)
+
 input_pickle = '{}.input.pickle'.format(run_id)
 output_pickle = '{}.output.pickle'.format(run_id)
 
@@ -12,9 +14,10 @@ with open(input_pickle, mode='rb') as f:
 
 j = julia.Julia()
 j.include("julia_runner_util.jl")
+j.include(code_file)
 
 j.timed_function_call(j.$FUNCTION_NAME, input_params)  # Call function to pre/compile.
-julia_run = j.timed_function_call(j.$FUNCTION_NAME, user_input)
+julia_run = j.timed_function_call(j.$FUNCTION_NAME, input_params)
 
 user_output = julia_run[0]
 runtime = julia_run[1]

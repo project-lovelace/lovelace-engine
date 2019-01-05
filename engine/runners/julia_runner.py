@@ -38,6 +38,8 @@ class JuliaRunner(AbstractRunner):
         runner_file = "{}.run.py".format(run_id)
         shutil.copy("run_jl.py", runner_file)
 
+        runner_util_file = "julia_runner_util.jl"
+
         # Replace "$FUNCTION_NAME" in run_it.py with function name to execute from
         # the problem module.
         logger.info("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
@@ -45,7 +47,7 @@ class JuliaRunner(AbstractRunner):
             for line in f:
                 print(line.replace("$FUNCTION_NAME", function_name), end='')
 
-        for file_name in [code_filename, runner_file, input_pickle]:
+        for file_name in [code_filename, runner_file, runner_util_file, input_pickle]:
             source_path = file_name
             target_path = "/root/{}".format(file_name)
             _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
