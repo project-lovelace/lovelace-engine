@@ -142,7 +142,7 @@ def execute(container, command_line, mode="non-interactive", env=None):
         command.append(env)
     command.append("--")
     command.extend(command_line)
-    return _run(command, timeout=20)
+    return _run(command, timeout=60)
 
 
 def profile_create(name, remote=None):
