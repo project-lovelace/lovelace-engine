@@ -57,7 +57,7 @@ class JuliaRunner(AbstractRunner):
                 raise FilePushError(push_stdout)
 
         runner_path = "/root/{}".format(runner_file)
-        command = ['python-jl', runner_path]
+        command = ['python', runner_path]
         _, exec_retval, exec_stdout = lxd.execute(container_name, command)
 
         if exec_retval != 0:
