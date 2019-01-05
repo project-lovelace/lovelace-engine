@@ -45,3 +45,10 @@ class TestApi(unittest.TestCase):
             print('Submitting {}!'.format(file_path))
             result = self.submit_solution(file_path)
             self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+
+    def test_all_problems_julia_success(self):
+        for file_name in os.listdir(self.julia_solutions_dir):
+            file_path = os.path.join(self.julia_solutions_dir, file_name)
+            print('Submitting {}!'.format(file_path))
+            result = self.submit_solution(file_path)
+            self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
