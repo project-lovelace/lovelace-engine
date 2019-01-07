@@ -142,7 +142,7 @@ def execute(container, command_line, mode="non-interactive", env=None):
         command.append(env)
     command.append("--")
     command.extend(command_line)
-    return _run(command, timeout=10)
+    return _run(command, timeout=60)
 
 
 def profile_create(name, remote=None):
@@ -210,7 +210,7 @@ def profile_delete(name, remote=None):
     profile = "{}:{}".format(remote, name) if remote else name
     command = ["lxc", "profile", "delete", profile]
     return _run(command)
-    
+
 
 def profile_device_remove(name, device, remote=None):
     """
