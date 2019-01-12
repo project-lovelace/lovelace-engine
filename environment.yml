@@ -1,40 +1,36 @@
-name: lovelace_env
+name: engine-env
 channels:
-  - <unknown>
   - defaults
 dependencies:
-  - falcon=1.4.1.post1=py37h470a237_0
-  - python-mimeparse=1.6.0=py_1
-  - appdirs=1.4.3=py37h28b3542_0
   - blas=1.0=mkl
   - ca-certificates=2018.03.07=0
-  - certifi=2018.10.15=py37_0
+  - certifi=2018.11.29=py37_0
   - gunicorn=19.9.0=py37_0
-  - intel-openmp=2019.0=118
+  - intel-openmp=2019.1=144
   - libedit=3.1.20170329=h6b74fdf_2
   - libffi=3.2.1=hd88cf55_4
   - libgcc-ng=8.2.0=hdf63c60_1
   - libgfortran-ng=7.3.0=hdf63c60_0
   - libstdcxx-ng=8.2.0=hdf63c60_1
-  - mkl=2019.0=118
-  - mkl_fft=1.0.6=py37h7dd41cf_0
-  - mkl_random=1.0.1=py37h4414c95_1
-  - ncurses=6.1=hf484d3e_0
-  - numpy=1.15.2=py37h1d66e8a_1
-  - numpy-base=1.15.2=py37h81de0dd_1
-  - openssl=1.0.2p=h14c3975_0
-  - packaging=18.0=py37_0
-  - pip=10.0.1=py37_0
-  - psutil=5.4.7=py37h14c3975_0
-  - pyparsing=2.2.2=py37_0
-  - python=3.7.0=h6e4f718_3
+  - mkl=2019.1=144
+  - mkl_fft=1.0.10=py37ha843d7b_0
+  - mkl_random=1.0.2=py37hd81dba3_0
+  - ncurses=6.1=he6710b0_1
+  - numpy=1.15.4=py37h7e9f1db_0
+  - numpy-base=1.15.4=py37hde5b4d6_0
+  - openssl=1.1.1a=h7b6447c_0
+  - pip=18.1=py37_0
+  - python=3.7.2=h0371630_0
   - readline=7.0=h7b6447c_5
-  - setuptools=40.4.3=py37_0
-  - six=1.11.0=py37_1
-  - sqlite=3.25.2=h7b6447c_0
+  - setuptools=40.6.3=py37_0
+  - sqlite=3.26.0=h7b6447c_0
   - tk=8.6.8=hbc83047_0
-  - wheel=0.32.1=py37_0
+  - wheel=0.32.3=py37_0
   - xz=5.2.4=h14c3975_4
-  - zlib=1.2.11=ha838bed_2
-prefix: /root/anaconda3/envs/lovelace_env
+  - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - falcon==1.4.1
+    - python-mimeparse==1.6.0
+    - six==1.12.0
+prefix: /home/ada/miniconda3/envs/engine-env
 
