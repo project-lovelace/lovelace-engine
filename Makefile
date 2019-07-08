@@ -3,6 +3,11 @@ SHELL := /bin/bash
 ENGINE_PID_FILE := /var/run/lovelace-engine.pid
 ENGINE_PORT := 14714
 
+# Production
+# PYTHON37 := /root/anaconda3/envs/lovelace_engine_env/bin/python
+# GUNICORN := /root/anaconda3/envs/lovelace_engine_env/bin/gunicorn
+
+# Development VM
 PYTHON37 := /usr/local/bin/python3
 GUNICORN := /usr/local/bin/gunicorn
 
