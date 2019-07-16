@@ -1,9 +1,9 @@
-import base64
-import json
 import os
-import unittest
-
+import time
+import json
+import base64
 import requests
+import unittest
 
 
 class TestApi(unittest.TestCase):
@@ -35,20 +35,35 @@ class TestApi(unittest.TestCase):
     def test_all_problems_python_success(self):
         for file_name in os.listdir(self.python_solutions_dir):
             file_path = os.path.join(self.python_solutions_dir, file_name)
-            print('Submitting {}!'.format(file_path))
+
+            print("Submitting {:}... ".format(file_path), end="", flush=True)
+            t1 = time.perf_counter()
             result = self.submit_solution(file_path)
-            self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_javascript_success(self):
         for file_name in os.listdir(self.javascript_solutions_dir):
             file_path = os.path.join(self.javascript_solutions_dir, file_name)
-            print('Submitting {}!'.format(file_path))
+
+            print("Submitting {:}... ".format(file_path), end="", flush=True)
+            t1 = time.perf_counter()
             result = self.submit_solution(file_path)
-            self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_julia_success(self):
         for file_name in os.listdir(self.julia_solutions_dir):
             file_path = os.path.join(self.julia_solutions_dir, file_name)
-            print('Submitting {}!'.format(file_path))
+
+            print("Submitting {:}... ".format(file_path), end="", flush=True)
+            t1 = time.perf_counter()
             result = self.submit_solution(file_path)
-            self.assertTrue(result['success'], 'Failed. Engine output:\n{}'.format(json.dumps(result, indent=4)))
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
