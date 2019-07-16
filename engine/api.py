@@ -258,32 +258,34 @@ def write_code_to_file(code, language):
     return code_filename
 
 
-def add_error_to_response(resp, explanation, error, falcon_http_error_code, code_filename):
+def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_filename):
     """
     Modify the falcon HTTP response object with an error to be shown to the user. Also deletes the user's code as the
     engine cannot run it.
 
     :param resp: The falcon HTTP response object to be modified.
     :param explanation: A human-friendly explanation of the error.
-    :param error: The exception error.
+    :param tb: Traceback string.
     :param falcon_http_error_code: Falcon HTTP error code to return.
     :param code_filename: Filepath to user code to be deleted.
     :return: nothing
     """
     logger.error(explanation)
-    logger.error(error)
+    logger.error(tb)
     util.delete_file(code_filename)
+
+    url_friendly_tb = urllib.parse.quote(tb)  # URL friendly traceback we can embed into a mailto: link.
 
     DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
     EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net?' \
-                 '&subject=Project Lovelace error report' + '&body={:}\n{:}'.format(explanation, error) + \
+                 '&subject=Project Lovelace error report' + '&body={:}\n{:}'.format(explanation, url_friendly_tb) + \
                  '">ada@projectlovelace.net</a>'
 
     NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
              "if you could report this on Discourse (" + DISCOURSE_LINK + ") or\n" \
              "via email (" + EMAIL_LINK + "). Thanks so much!"
 
-    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, error)
+    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, tb)
     resp_dict = {'error': error_message}
 
     resp.status = falcon_http_error_code
