@@ -259,7 +259,10 @@ def add_error_to_response(resp, explanation, error, falcon_http_error_code):
     logger.error(explanation)
 
     DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
-    EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net">ada@projectlovelace.net</a>'
+    EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net?' \
+                 '&subject=Project Lovelace error report' + '&body={:}\n{:}'.format(explanation, error) + \
+                 '">ada@projectlovelace.net</a>'
+
     NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
              "if you could report this on Discourse (" + DISCOURSE_LINK + ") or\n" \
              "via email (" + EMAIL_LINK + "). Thanks so much!"
