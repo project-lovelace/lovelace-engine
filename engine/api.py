@@ -90,11 +90,17 @@ class SubmitResource(object):
 
         logger.info("Generating test cases...")
         test_cases = []
-        for i, test_type in enumerate(problem.TestCaseType):
-            for j in range(test_type.multiplicity):
-                logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
-                    .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
-                test_cases.append(problem.generate_test_case(test_type))
+
+        try:
+            for i, test_type in enumerate(problem.TestCaseType):
+                for j in range(test_type.multiplicity):
+                    logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
+                        .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
+                    test_cases.append(problem.generate_test_case(test_type))
+        except Exception:
+            explanation = "Engine failed to generate a test case. Returning falcon HTTP 500."
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
+            return
 
         num_passes = 0  # Number of test cases passed.
         num_cases = len(test_cases)
@@ -132,15 +138,15 @@ class SubmitResource(object):
             try:
                 user_answer, process_info = runner.run(self.container_name, code_filename, function_name, input_tuple)
 
-            except (FilePushError, FilePullError) as e:
+            except (FilePushError, FilePullError):
                 explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
-                add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
+                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                 return
 
-            except EngineExecutionError as e:
+            except EngineExecutionError:
                 explanation = "Return code from executing user code in LXD container is nonzero. " \
                               "Returning falcon HTTP 400."
-                add_error_to_response(resp, explanation, e, falcon.HTTP_400, code_filename)
+                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
                 return
 
             logger.debug("User answer: {:}".format(user_answer))
