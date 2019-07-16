@@ -263,6 +263,7 @@ def add_error_to_response(resp, explanation, error, falcon_http_error_code, code
     :return: nothing
     """
     logger.error(explanation)
+    logger.error(error)
     util.delete_file(code_filename)
 
     DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
