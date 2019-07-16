@@ -64,7 +64,6 @@ class SubmitResource(object):
             logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
             raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
         else:
-            test_case_type_enum = problem.TEST_CASE_TYPE_ENUM
             function_name = problem.FUNCTION_NAME
             problem_dir = problem_name
             static_resources = []
@@ -91,7 +90,7 @@ class SubmitResource(object):
 
         logger.info("Generating test cases...")
         test_cases = []
-        for i, test_type in enumerate(test_case_type_enum):
+        for i, test_type in enumerate(problem.TestCaseType):
             for j in range(test_type.multiplicity):
                 logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
                     .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
