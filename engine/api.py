@@ -162,7 +162,18 @@ class SubmitResource(object):
                 logger.debug("Looks like user's function returned None; the output: {}".format(user_answer))
                 passed = False
             else:
-                passed, expected = problem.verify_user_solution(input_tuple, user_answer)
+                try:
+                    passed, expected = problem.verify_user_solution(input_tuple, user_answer)
+                except Exception as e:
+                    logger.error("Internal engine error during user test case verification. Returning falcon HTTP 500.")
+
+                    resp_dict = {'error': "Internal engine error during user test case verification. "
+                                          "Returning falcon HTTP 500. {:}".format(e)}
+
+                    resp.status = falcon.HTTP_500
+                    resp.set_header('Access-Control-Allow-Origin', '*')
+                    resp.body = json.dumps(resp_dict)
+                    return
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input tuple:")
