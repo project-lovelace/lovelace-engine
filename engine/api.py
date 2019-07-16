@@ -78,7 +78,7 @@ class SubmitResource(object):
                     shutil.copyfile(from_path, to_path)
                 except Exception as e:
                     explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
-                    add_error_to_response(resp, explanation, e, falcon.HTTP_500)
+                    add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
                     return
 
                 static_resources.append(to_path)
@@ -133,13 +133,13 @@ class SubmitResource(object):
 
             except (FilePushError, FilePullError) as e:
                 explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
-                add_error_to_response(resp, explanation, e, falcon.HTTP_500)
+                add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
                 return
 
             except EngineExecutionError as e:
                 explanation = "Return code from executing user code in LXD container is nonzero. " \
                               "Returning falcon HTTP 400."
-                add_error_to_response(resp, explanation, e, falcon.HTTP_400)
+                add_error_to_response(resp, explanation, e, falcon.HTTP_400, code_filename)
                 return
 
             logger.debug("User answer: {:}".format(user_answer))
@@ -160,7 +160,7 @@ class SubmitResource(object):
                     passed, expected = problem.verify_user_solution(input_tuple, user_answer)
                 except Exception as e:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
-                    add_error_to_response(resp, explanation, e, falcon.HTTP_500)
+                    add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
                     return
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
@@ -249,8 +249,9 @@ def write_code_to_file(code, language):
     return code_filename
 
 
-def add_error_to_response(resp, explanation, error, falcon_http_error_code):
+def add_error_to_response(resp, explanation, error, falcon_http_error_code, code_filename):
     logger.error(explanation)
+    util.delete_file(code_filename)
 
     DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
     EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net?' \
