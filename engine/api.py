@@ -166,17 +166,7 @@ class SubmitResource(object):
                     passed, expected = problem.verify_user_solution(input_tuple, user_answer)
                 except Exception as e:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
-                    notice = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
-                             "if you could report this on Discourse (https://discourse.projectlovelace.net/) or\n" \
-                             "via email (ada@projectlovelace.net). Thanks so much!"
-
-                    logger.error(explanation)
-                    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, notice, e)
-
-                    resp_dict = {'error': error_message}
-                    resp.status = falcon.HTTP_500
-                    resp.set_header('Access-Control-Allow-Origin', '*')
-                    resp.body = json.dumps(resp_dict)
+                    add_error_to_response(resp, explanation, e, falcon.HTTP_500)
                     return
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
@@ -263,6 +253,22 @@ def write_code_to_file(code, language):
     logger.debug("User code saved in: {:s}".format(code_filename))
 
     return code_filename
+
+
+def add_error_to_response(resp, explanation, error, falcon_http_error_code):
+    logger.error(explanation)
+
+    NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
+             "if you could report this on Discourse (https://discourse.projectlovelace.net/) or\n" \
+             "via email (ada@projectlovelace.net). Thanks so much!"
+
+    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, error)
+    resp_dict = {'error': error_message}
+
+    resp.status = falcon_http_error_code
+    resp.set_header('Access-Control-Allow-Origin', '*')
+    resp.body = json.dumps(resp_dict)
+    return
 
 
 app = falcon.API()
