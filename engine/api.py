@@ -59,10 +59,11 @@ class SubmitResource(object):
 
         try:
             problem = importlib.import_module(problem_module)
-        except Exception:
-            logger.exception("Could not import module {:s}".format(problem_module))
-            logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
+        except Exception as e:
+            explanation = "Could not import module {:s}. " \
+                          "Returning HTTP 400 Bad Request due to possibly invalid JSON.".format(problem_module)
+            add_error_to_response(resp, explanation, e, falcon.HTTP_400, code_filename)
+            return
         else:
             function_name = problem.FUNCTION_NAME
             problem_dir = problem_name
