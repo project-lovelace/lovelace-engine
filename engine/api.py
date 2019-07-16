@@ -76,10 +76,9 @@ class SubmitResource(object):
 
                 try:
                     shutil.copyfile(from_path, to_path)
-                except Exception:
-                    resp.status = falcon.HTTP_500
-                    resp.set_header('Access-Control-Allow-Origin', '*')
-                    resp.body = json.dumps({'error': '500 Internal server error: Engine failed to find a resource.'})
+                except Exception as e:
+                    explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
+                    add_error_to_response(resp, explanation, e, falcon.HTTP_500)
                     return
 
                 static_resources.append(to_path)
@@ -131,21 +130,16 @@ class SubmitResource(object):
 
             try:
                 user_answer, process_info = runner.run(self.container_name, code_filename, function_name, input_tuple)
+
             except (FilePushError, FilePullError) as e:
-                logger.error("File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500.")
-
-                resp_dict = {'error': "{:}".format(e)}
-                resp.status = falcon.HTTP_500
-                resp.set_header('Access-Control-Allow-Origin', '*')
-                resp.body = json.dumps(resp_dict)
+                explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
+                add_error_to_response(resp, explanation, e, falcon.HTTP_500)
                 return
-            except EngineExecutionError as e:
-                logger.warning("Return code from executing user code in LXD container is nonzero. Returning falcon HTTP 400.")
 
-                resp_dict = {'error': "{:}".format(e)}
-                resp.status = falcon.HTTP_400
-                resp.set_header('Access-Control-Allow-Origin', '*')
-                resp.body = json.dumps(resp_dict)
+            except EngineExecutionError as e:
+                explanation = "Return code from executing user code in LXD container is nonzero. " \
+                              "Returning falcon HTTP 400."
+                add_error_to_response(resp, explanation, e, falcon.HTTP_400)
                 return
 
             logger.debug("User answer: {:}".format(user_answer))
