@@ -165,11 +165,15 @@ class SubmitResource(object):
                 try:
                     passed, expected = problem.verify_user_solution(input_tuple, user_answer)
                 except Exception as e:
-                    logger.error("Internal engine error during user test case verification. Returning falcon HTTP 500.")
+                    explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
+                    notice = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
+                             "if you could report this on Discourse (https://discourse.projectlovelace.net/) or\n" \
+                             "via email (ada@projectlovelace.net). Thanks so much!"
 
-                    resp_dict = {'error': "Internal engine error during user test case verification. "
-                                          "Returning falcon HTTP 500. {:}".format(e)}
+                    logger.error(explanation)
+                    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, notice, e)
 
+                    resp_dict = {'error': error_message}
                     resp.status = falcon.HTTP_500
                     resp.set_header('Access-Control-Allow-Origin', '*')
                     resp.body = json.dumps(resp_dict)
