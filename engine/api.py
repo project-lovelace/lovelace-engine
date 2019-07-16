@@ -1,10 +1,12 @@
-import base64
-import importlib
-import json
-import logging
 import os
+import json
+import base64
 import shutil
+import urllib
+import logging
 import datetime
+import importlib
+import traceback
 
 # Config applies to loggers created in modules accessed from this module
 # Logger must loaded before importing other modules that rely on this logger,
@@ -59,10 +61,10 @@ class SubmitResource(object):
 
         try:
             problem = importlib.import_module(problem_module)
-        except Exception as e:
+        except Exception:
             explanation = "Could not import module {:s}. " \
                           "Returning HTTP 400 Bad Request due to possibly invalid JSON.".format(problem_module)
-            add_error_to_response(resp, explanation, e, falcon.HTTP_400, code_filename)
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
             return
         else:
             function_name = problem.FUNCTION_NAME
@@ -77,9 +79,9 @@ class SubmitResource(object):
 
                 try:
                     shutil.copyfile(from_path, to_path)
-                except Exception as e:
+                except Exception:
                     explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
-                    add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
+                    add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                     return
 
                 static_resources.append(to_path)
@@ -165,9 +167,9 @@ class SubmitResource(object):
             else:
                 try:
                     passed, expected = problem.verify_user_solution(input_tuple, user_answer)
-                except Exception as e:
+                except Exception:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
-                    add_error_to_response(resp, explanation, e, falcon.HTTP_500, code_filename)
+                    add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                     return
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
