@@ -250,6 +250,17 @@ def write_code_to_file(code, language):
 
 
 def add_error_to_response(resp, explanation, error, falcon_http_error_code, code_filename):
+    """
+    Modify the falcon HTTP response object with an error to be shown to the user. Also deletes the user's code as the
+    engine cannot run it.
+
+    :param resp: The falcon HTTP response object to be modified.
+    :param explanation: A human-friendly explanation of the error.
+    :param error: The exception error.
+    :param falcon_http_error_code: Falcon HTTP error code to return.
+    :param code_filename: Filepath to user code to be deleted.
+    :return: nothing
+    """
     logger.error(explanation)
     util.delete_file(code_filename)
 
