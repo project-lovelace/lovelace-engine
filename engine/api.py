@@ -283,7 +283,8 @@ def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_fi
 
     NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
              "if you could report this on Discourse (" + DISCOURSE_LINK + ") or\n" \
-             "via email (" + EMAIL_LINK + "). Thanks so much!"
+             "via email (" + EMAIL_LINK + "). All the information is embedded in the email link " \
+             "so all you have to do is press send. Thanks so much!"
 
     error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, tb)
     resp_dict = {'error': error_message}
