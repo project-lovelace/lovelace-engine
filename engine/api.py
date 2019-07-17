@@ -8,14 +8,6 @@ import datetime
 import importlib
 import traceback
 
-# Config applies to loggers created in modules accessed from this module
-# Logger must loaded before importing other modules that rely on this logger,
-# otherwise they will be getting an empty logger and messages from that module
-# will not be logged.
-log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logging.ini')
-logging.config.fileConfig(log_file_path)
-logger = logging.getLogger(__name__)
-
 import falcon
 
 import engine.util as util
@@ -23,6 +15,10 @@ from engine.simple_lxd import simple_lxd as lxd
 from engine.runners.python_runner import PythonRunner, FilePushError, FilePullError, EngineExecutionError
 from engine.runners.javascript_runner import JavascriptRunner
 from engine.runners.julia_runner import JuliaRunner
+
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging.ini")
+logging.config.fileConfig(log_file_path, disable_existing_loggers=False)
+logger = logging.getLogger(__name__)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
