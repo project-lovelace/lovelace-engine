@@ -10,24 +10,19 @@ class LXDError(Exception):
     pass
 
 
-def launch(image, name, ephemeral=False, profile=None, config=None,
-           instance_type=None):
-    """Create and start containers from images.
+def launch(image, name, ephemeral=False, profile=None, config=None, instance_type=None):
+    """
+    Create and start containers from images.
+
     Syntax: lxc launch [<remote>:]<image> [<remote>:][<name>] [--ephemeral|-e]
         [--profile|-p <profile>...] [--config|-c <key=value>...]
         [--type|-t <instance type>]
-    :param image:
-    :param name:
-    :param ephemeral:
-    :param profile:
-    :param config:
-    :param instance_type:
-    :return: str
     """
-    logger.debug("Launching Linux container (image={:s}, name={:s}, ephemeral={:}, profile={:}, config={:}," \
-                 " instance_type={:})...".format(image, name, ephemeral, profile, config, instance_type))
+    logger.debug("Launching Linux container (image={:s}, name={:s}, ephemeral={:}, profile={:}, config={:}, "
+                 "instance_type={:})...".format(image, name, ephemeral, profile, config, instance_type))
 
     command = ["lxc", "launch", image, name]
+
     if ephemeral:
         command.append("--ephemeral")
     if profile:
@@ -39,14 +34,16 @@ def launch(image, name, ephemeral=False, profile=None, config=None,
     if instance_type:
         command.append("--type")
         command.append(instance_type)
+
     return _run(command)
 
 
 def file_pull(container, source_path, target_path):
-    """Pull files from containers.
+    """
+    Pull files from containers.
+
     Syntax: lxc file pull [<remote>:]<container>/<path>
         [[<remote>:]<container>/<path>...] <target path>
-    :return:
     """
     logger.debug("Pulling file {:s} from Linux container {:s} to {:s}...".format(source_path, container, target_path))
 
@@ -57,18 +54,18 @@ def file_pull(container, source_path, target_path):
     return _run(command)
 
 
-def file_push(container, source_path, target_path,
-              uid=None, gid=None, mode=None):
-    """Push files into containers.
+def file_push(container, source_path, target_path, uid=None, gid=None, mode=None):
+    """
+    Push files into containers.
+
     Syntax: lxc file push [--uid=UID] [--gid=GID] [--mode=MODE] <source path>
         [<source path>...] [<remote>:]<container>/<path>
-    :return: str
     """
     logger.debug("Pushing file {:s} into Linux container {:s} in {:s} (uid={:}, gid={:}, mode={:})..."
                  .format(source_path, container, target_path, uid, gid, mode))
 
-    # command = ["lxc", "file", "push", "--force-local", "--verbose"]
-    command = ["lxc", "file", "push", "--debug", "--verbose"]
+    command = ["lxc", "file", "push", "--verbose"]
+    # command = ["lxc", "file", "push", "--debug", "--verbose"]
 
     if uid:
         command.append("--uid=")
@@ -79,6 +76,7 @@ def file_push(container, source_path, target_path,
     if mode:
         command.append("--mode=")
         command.append(mode)
+
     command.append(source_path)
     command.append(container + target_path)
 
@@ -86,72 +84,74 @@ def file_push(container, source_path, target_path,
 
 
 def stop(container, log=True):
-    """Stop running containers.
-    Syntax: lxc stop [<remote>:]<container> [[<remote>:]<container>...]
-    :return: str
     """
-    if log:
-        logger.debug("Stopping Linux container {:s}...".format(container))
+    Stop running containers.
+
+    Syntax: lxc stop [<remote>:]<container> [[<remote>:]<container>...]
+    """
+
+    logger.debug("Stopping Linux container {:s}...".format(container))
 
     command = ["lxc", "stop"]
+
     if type(container) is str:
         command.append(container)
     elif type(container) is list:
         for c in container:
             command.append(c)
+
     return _run(command, log=log)
 
 
 def delete(container, log=True):
-    """Delete containers and snapshots.
+    """
+    Delete containers and snapshots.
+
     Syntax: lxc delete [<remote>:]<container>[/<snapshot>]
         [[<remote>:]<container>[/<snapshot>]...]
-    :return: str
     """
-    if log:
-        logger.debug("Deleting Linux container {:s}...".format(container))
+    logger.debug("Deleting Linux container {:s}...".format(container))
 
     command = ["lxc", "delete"]
+
     if type(container) is str:
         command.append(container)
     elif type(container) is list:
         for c in container:
             command.append(c)
+
     return _run(command, log=log)
 
 
 def execute(container, command_line, mode="non-interactive", env=None):
     """
     Execute commands in containers.
+
     Syntax: lxc exec [<remote>:]<container>
         [--mode=auto|interactive|non-interactive] [--env KEY=VALUE...]
         [--] <command line>
-    :param container:
-    :param command_line:
-    :param mode:
-    :param env:
-    :return:
     """
     logger.debug("Executing command `{:}` in Linux container {:s} (mode={:}, env={:})..."
                  .format(command_line, container, mode, env))
 
     command = ["lxc", "exec", container, "--mode={}".format(mode)]
     # command = ["lxc", "exec", "--verbose", "--debug", container, "--mode={}".format(mode)]
+
     if env:
         command.append("--env")
         command.append(env)
+
     command.append("--")
     command.extend(command_line)
+
     return _run(command, timeout=60)
 
 
 def profile_create(name, remote=None):
     """
     Create a new profile.
+
     Syntax: lxc profile create [<remote>:]<profile>
-    :param remote:
-    :param name:
-    :return:
     """
     logger.debug("Creating Linux container profile {:} (remote={:})...".format(name))
 
@@ -163,18 +163,15 @@ def profile_create(name, remote=None):
 def profile_copy(src_name, dst_name, src_remote=None, dst_remote=None):
     """
     Copy the profile.
+
     Syntax: lxc profile copy [<remote>:]<profile> [<remote>:]<profile>
-    :param src_name:
-    :param dst_name:
-    :param src_remote:
-    :param dst_remote:
-    :return:
     """
     logger.debug("Copying Linux container profile {:s} to {:s} (src_remote={:}, dst_remote={:})..."
                  .format(src_name, dst_name, src_remote, dst_remote))
 
     src = "{}:{}".format(src_remote, src_name) if src_remote else src_name
     dst = "{}:{}".format(dst_remote, dst_name) if dst_remote else dst_name
+
     command = ["lxc", "profile", "copy", src, dst]
     return _run(command)
 
@@ -182,12 +179,8 @@ def profile_copy(src_name, dst_name, src_remote=None, dst_remote=None):
 def profile_set(name, key, value, remote=None):
     """
     Set profile configuration.
+
     Syntax: lxc profile set [<remote>:]<profile> <key> <value>
-    :param name:
-    :param key:
-    :param value:
-    :param remote:
-    :return:
     """
     logger.debug("Setting Linux container profile {:s} (key={:}, value={:}, remote={:})..."
                  .format(name, key, value, remote))
@@ -200,10 +193,8 @@ def profile_set(name, key, value, remote=None):
 def profile_delete(name, remote=None):
     """
     Delete a profile.
+
     Syntax: lxc profile delete [<remote>:]<profile>
-    :param name:
-    :param remote:
-    :return:
     """
     logger.debug("Deleting Linux container profile {:s} (remote={:})...".format(name, remote))
 
@@ -215,11 +206,8 @@ def profile_delete(name, remote=None):
 def profile_device_remove(name, device, remote=None):
     """
     Remove a device from a profile.
+
     Syntax: lxc profile device remove [<remote>:]<profile> <name>
-    :param name:
-    :param device:
-    :param remote:
-    :return:
     """
     logger.debug("Deleting device {:s} from profile {:s} (remote={:})...".format(device, name, remote))
 
@@ -241,22 +229,25 @@ def _run(command_args, timeout=60, log=True):
         try:
             process = Popen(command_args, stdout=PIPE, stderr=STDOUT, encoding="utf-8")
 
-            # Python Docs: this will deadlock when using stdout=PIPE or stderr=PIPE and the child process generates enough output to a pipe such that it blocks waiting for the OS pipe buffer to accept more data.
+            # Python Docs: this will deadlock when using stdout=PIPE or stderr=PIPE and the child process generates
+            # enough output to a pipe such that it blocks waiting for the OS pipe buffer to accept more data.
             # I don't this was an issue for us yet, but something to keep in mind.
             process.wait(timeout)
 
             retval = process.poll()
             if retval != 0 and log:
                 logger.warning("Return value: {:}".format(retval))
+
         except subprocess.TimeoutExpired as e:
             if log:
                 logger.debug("Timeout expired on attempt {:d}. Retrying {:}".format(attempt+1, e))
-            # continue
+
             # TODO: fix this case where programs timeout.
             if log:
                 logger.debug("Returning after user code timed out.")
             return process, -1, "Your program took too long to run (more than 10 seconds)."
-        else:  # success
+
+        else:
             retval = process.poll()
             stdout_str = process.stdout.read()
 
@@ -264,7 +255,8 @@ def _run(command_args, timeout=60, log=True):
                 logger.debug("stdout+err:\n{:}".format(stdout_str.strip()))
 
             return process, retval, stdout_str
-    else:  # all attempts failed.
+
+    else:
         if log:
             logger.debug("Max attempts ({:d}) tried.".format(max_attempts))
 
@@ -272,10 +264,12 @@ def _run(command_args, timeout=60, log=True):
 def _stdout_to_str(text_io_wrapper):
     line = text_io_wrapper.readline()
     total = ""
+
     while line:
         logger.debug(line)
         print(line, end="")
         line = text_io_wrapper.readline()
         total += line
+
     return total
 
