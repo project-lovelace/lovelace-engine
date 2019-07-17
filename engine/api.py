@@ -1,10 +1,12 @@
-import base64
-import importlib
-import json
-import logging
 import os
+import json
+import base64
 import shutil
+import urllib
+import logging
 import datetime
+import importlib
+import traceback
 
 # Config applies to loggers created in modules accessed from this module
 # Logger must loaded before importing other modules that rely on this logger,
@@ -60,9 +62,10 @@ class SubmitResource(object):
         try:
             problem = importlib.import_module(problem_module)
         except Exception:
-            logger.exception("Could not import module {:s}".format(problem_module))
-            logger.error("Returning HTTP 400 Bad Request due to possibly invalid JSON.")
-            raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'Invalid problem name!')
+            explanation = "Could not import module {:s}. " \
+                          "Returning HTTP 400 Bad Request due to possibly invalid JSON.".format(problem_module)
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
+            return
         else:
             function_name = problem.FUNCTION_NAME
             problem_dir = problem_name
@@ -77,9 +80,8 @@ class SubmitResource(object):
                 try:
                     shutil.copyfile(from_path, to_path)
                 except Exception:
-                    resp.status = falcon.HTTP_500
-                    resp.set_header('Access-Control-Allow-Origin', '*')
-                    resp.body = json.dumps({'error': '500 Internal server error: Engine failed to find a resource.'})
+                    explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
+                    add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                     return
 
                 static_resources.append(to_path)
@@ -90,11 +92,17 @@ class SubmitResource(object):
 
         logger.info("Generating test cases...")
         test_cases = []
-        for i, test_type in enumerate(problem.TestCaseType):
-            for j in range(test_type.multiplicity):
-                logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
-                    .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
-                test_cases.append(problem.generate_test_case(test_type))
+
+        try:
+            for i, test_type in enumerate(problem.TestCaseType):
+                for j in range(test_type.multiplicity):
+                    logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
+                        .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
+                    test_cases.append(problem.generate_test_case(test_type))
+        except Exception:
+            explanation = "Engine failed to generate a test case. Returning falcon HTTP 500."
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
+            return
 
         num_passes = 0  # Number of test cases passed.
         num_cases = len(test_cases)
@@ -131,21 +139,16 @@ class SubmitResource(object):
 
             try:
                 user_answer, process_info = runner.run(self.container_name, code_filename, function_name, input_tuple)
-            except (FilePushError, FilePullError) as e:
-                logger.error("File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500.")
 
-                resp_dict = {'error': "{:}".format(e)}
-                resp.status = falcon.HTTP_500
-                resp.set_header('Access-Control-Allow-Origin', '*')
-                resp.body = json.dumps(resp_dict)
+            except (FilePushError, FilePullError):
+                explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
+                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                 return
-            except EngineExecutionError as e:
-                logger.warning("Return code from executing user code in LXD container is nonzero. Returning falcon HTTP 400.")
 
-                resp_dict = {'error': "{:}".format(e)}
-                resp.status = falcon.HTTP_400
-                resp.set_header('Access-Control-Allow-Origin', '*')
-                resp.body = json.dumps(resp_dict)
+            except EngineExecutionError:
+                explanation = "Return code from executing user code in LXD container is nonzero. " \
+                              "Returning falcon HTTP 400."
+                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
                 return
 
             logger.debug("User answer: {:}".format(user_answer))
@@ -162,7 +165,12 @@ class SubmitResource(object):
                 logger.debug("Looks like user's function returned None; the output: {}".format(user_answer))
                 passed = False
             else:
-                passed, expected = problem.verify_user_solution(input_tuple, user_answer)
+                try:
+                    passed, expected = problem.verify_user_solution(input_tuple, user_answer)
+                except Exception:
+                    explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
+                    add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
+                    return
 
             logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
             logger.debug("Input tuple:")
@@ -248,6 +256,43 @@ def write_code_to_file(code, language):
     logger.debug("User code saved in: {:s}".format(code_filename))
 
     return code_filename
+
+
+def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_filename):
+    """
+    Modify the falcon HTTP response object with an error to be shown to the user. Also deletes the user's code as the
+    engine cannot run it.
+
+    :param resp: The falcon HTTP response object to be modified.
+    :param explanation: A human-friendly explanation of the error.
+    :param tb: Traceback string.
+    :param falcon_http_error_code: Falcon HTTP error code to return.
+    :param code_filename: Filepath to user code to be deleted.
+    :return: nothing
+    """
+    logger.error(explanation)
+    logger.error(tb)
+    util.delete_file(code_filename)
+
+    url_friendly_tb = urllib.parse.quote(tb)  # URL friendly traceback we can embed into a mailto: link.
+
+    DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
+    EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net?' \
+                 '&subject=Project Lovelace error report' + '&body={:}\n{:}'.format(explanation, url_friendly_tb) + \
+                 '">ada@projectlovelace.net</a>'
+
+    NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
+             "if you could report this on Discourse (" + DISCOURSE_LINK + ") or\n" \
+             "via email (" + EMAIL_LINK + "). All the information is embedded in the email link " \
+             "so all you have to do is press send. Thanks so much!"
+
+    error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, tb)
+    resp_dict = {'error': error_message}
+
+    resp.status = falcon_http_error_code
+    resp.set_header('Access-Control-Allow-Origin', '*')
+    resp.body = json.dumps(resp_dict)
+    return
 
 
 app = falcon.API()

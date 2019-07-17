@@ -1,8 +1,6 @@
-# util.py
-
-import hashlib
 import os
 import time
+import hashlib
 import logging
 
 from .simple_lxd import simple_lxd as lxd
@@ -61,8 +59,9 @@ def read_list_from_file(filename):
 
 
 def delete_file(filename):
-    logger.info("Deleting file: {:s}".format(filename))
-    os.remove(filename)
+    if os.path.isfile(filename):
+        logger.info("Deleting file: {:s}".format(filename))
+        os.remove(filename)
     return
 
 
