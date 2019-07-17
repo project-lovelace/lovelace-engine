@@ -31,15 +31,9 @@ class SubmitResource(object):
         self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         logger.info("Launching Linux container {:s} (pid={:d}) from image {:s}..."
-            .format(self.container_name, self.pid, self.container_image))
-        lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
+                    .format(self.container_name, self.pid, self.container_image))
 
-    # This doesn't actually stop and delete the LXD containers if SIGKILL or SIGTERM was sent
-    # as I think Python shuts down too quickly. TODO: Figure out how to unconditionally stop
-    # and delete orphaned LXD containers.
-    def __del__(self):
-        lxd.stop(self.container_name, log=False)
-        lxd.delete(self.container_name, log=False)
+        lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
     def on_post(self, req, resp):
         """Handle POST requests."""
