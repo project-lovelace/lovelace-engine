@@ -36,49 +36,50 @@ class SubmitResource(object):
         lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
     def on_post(self, req, resp):
-        """Handle POST requests."""
-        # payload = parse_payload(req)
         payload = req.media
 
         code = payload['code']
         language = payload['language']
+
         code_filename = write_code_to_file(code, language)
 
-        # Fetch problem ID and load the correct problem module.
-        problem_name = payload['problem'].replace('-', '_')
-        problem_module = 'problems.{:s}'.format(problem_name)
-        logger.debug("problem_name={:s} problem_module={:s}".format(problem_name, problem_module))
-
         try:
+            # Fetch problem ID and load the correct problem module.
+            problem_name = payload['problem'].replace('-', '_')
+            problem_module = 'problems.{:s}'.format(problem_name)
+
+            logger.debug("Importing problem_name={:s} problem_module={:s}...".format(problem_name, problem_module))
+
             problem = importlib.import_module(problem_module)
         except Exception:
             explanation = "Could not import module {:s}. " \
                           "Returning HTTP 400 Bad Request due to possibly invalid JSON.".format(problem_module)
             add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
             return
-        else:
-            function_name = problem.FUNCTION_NAME
-            problem_dir = problem_name
-            static_resources = []
 
-            for resource_file_name in problem.STATIC_RESOURCES:
-                from_path = os.path.join(cwd, '..', 'resources', problem_dir, resource_file_name)
-                to_path = os.path.join(cwd, resource_file_name)
+        function_name = problem.FUNCTION_NAME
+        problem_dir = problem_name
 
-                logger.debug("Copying static resource from {:s} to {:s}".format(from_path, to_path))
+        # Copy static resources into engine directory and push them into the Linux container.
+        static_resources = []
+        for resource_file_name in problem.STATIC_RESOURCES:
+            from_path = os.path.join(cwd, "..", "resources", problem_dir, resource_file_name)
+            to_path = os.path.join(cwd, resource_file_name)
 
-                try:
-                    shutil.copyfile(from_path, to_path)
-                except Exception:
-                    explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
-                    add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
-                    return
+            logger.debug("Copying static resource from {:s} to {:s}".format(from_path, to_path))
 
-                static_resources.append(to_path)
+            try:
+                shutil.copyfile(from_path, to_path)
+            except Exception:
+                explanation = "Engine failed to copy a static resource. Returning falcon HTTP 500."
+                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
+                return
 
-                container_path = "/root/{:}".format(resource_file_name)
-                logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, container_path))
-                lxd.file_push(self.container_name, from_path, container_path)
+            static_resources.append(to_path)
+
+            container_path = "/root/{:}".format(resource_file_name)
+            logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, container_path))
+            lxd.file_push(self.container_name, from_path, container_path)
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -87,7 +88,7 @@ class SubmitResource(object):
             for i, test_type in enumerate(problem.TestCaseType):
                 for j in range(test_type.multiplicity):
                     logger.debug("Generating test case {:d}: {:s} ({:d}/{:d})..."
-                        .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
+                                 .format(len(test_cases)+1, str(test_type), j+1, test_type.multiplicity))
                     test_cases.append(problem.generate_test_case(test_type))
         except Exception:
             explanation = "Engine failed to generate a test case. Returning falcon HTTP 500."
@@ -102,11 +103,10 @@ class SubmitResource(object):
             if 'DYNAMIC_RESOURCES' in tc.input:
                 dynamic_resources = []
                 for dynamic_resource_filename in tc.input['DYNAMIC_RESOURCES']:
-                    resource_path = os.path.join(cwd, '..', 'resources', problem_dir, dynamic_resource_filename)
+                    resource_path = os.path.join(cwd, "..", "resources", problem_dir, dynamic_resource_filename)
                     destination_path = os.path.join(cwd, dynamic_resource_filename)
 
-                    logger.debug("Copying test case resource from {:s} to {:s}"
-                        .format(resource_path, destination_path))
+                    logger.debug("Copying test case resource from {:s} to {:s}".format(resource_path, destination_path))
 
                     shutil.copyfile(resource_path, destination_path)
                     dynamic_resources.append(destination_path)
@@ -141,18 +141,17 @@ class SubmitResource(object):
                 add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
                 return
 
-            logger.debug("User answer: {:}".format(user_answer))
-            logger.debug("Process info: {:}".format(process_info))
-
             if 'USER_GENERATED_FILES' in tc.input:
                 for user_generated_filename in tc.input['USER_GENERATED_FILES']:
                     container_filepath = "/root/{:}".format(user_generated_filename)
+
                     logger.debug("Pulling user generated file from container {:}{:}"
-                            .format(self.container_name, container_filepath))
+                                 .format(self.container_name, container_filepath))
+
                     lxd.file_pull(self.container_name, container_filepath, user_generated_filename)
 
             if user_answer[0] is None:
-                logger.debug("Looks like user's function returned None; the output: {}".format(user_answer))
+                logger.debug("Looks like user's function returned None: output={:}".format(user_answer))
                 passed = False
             else:
                 try:
@@ -162,19 +161,8 @@ class SubmitResource(object):
                     add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                     return
 
-            logger.info("Test case %d/%d (%s).", i+1, num_cases, tc.test_type.test_name)
-            logger.debug("Input tuple:")
-            logger.debug("%s", input_tuple)
-            logger.debug("User answer:")
-            logger.debug("%s", user_answer)
-            logger.debug("Expected answer:")
-            logger.debug("%s", expected)
-
             if passed:
                 num_passes += 1
-                logger.info("Test case passed!")
-            else:
-                logger.info("Test case failed.")
 
             test_case_details.append({
                 'testCaseType': tc.test_type.test_name,
