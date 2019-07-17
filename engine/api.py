@@ -41,6 +41,13 @@ class SubmitResource(object):
         code = payload['code']
         language = payload['language']
 
+        if not code:
+            resp_dict = {'error': "No code provided!"}
+            resp.status = falcon.HTTP_400
+            resp.set_header('Access-Control-Allow-Origin', '*')
+            resp.body = json.dumps(resp_dict)
+            return
+
         code_filename = write_code_to_file(code, language)
 
         try:
@@ -224,9 +231,6 @@ def write_code_to_file(code, language):
     :param language: the code's programming language
     :return: the name of the file containing the user's code
     """
-    if not code:
-        raise falcon.HTTPError(falcon.HTTP_400, 'Invalid JSON.', 'No code provided in request.')
-
     decoded_code = str(base64.b64decode(code), 'utf-8')
     extension = {'python': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
