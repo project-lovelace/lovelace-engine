@@ -36,9 +36,9 @@ class PythonRunner(AbstractRunner):
             pickle.dump(input_tuples, file=f, protocol=pickle.HIGHEST_PROTOCOL)
 
         runner_file = "{:s}.run.py".format(run_id)
-        shutil.copy("run_it.py", runner_file)
+        shutil.copy("run_py.py", runner_file)
 
-        # Replace "$FUNCTION_NAME" in run_it.py with function name to call from the problem module.
+        # Replace "$FUNCTION_NAME" in run_py.py with function name to call from the problem module.
         logger.debug("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
         with fileinput.FileInput(runner_file, inplace=True) as f:
             for line in f:
