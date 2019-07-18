@@ -25,7 +25,7 @@ for i, input_tuple in enumerate(input_tuples):
     _, max_mem_usage = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
-    user_output = (user_output,) if not isinstance(user_output, tuple) else user_output
+    user_output = user_output if isinstance(user_output, tuple) else (user_output,)
     runtime = t2 - t1
 
     output_dict = {
