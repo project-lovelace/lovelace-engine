@@ -121,67 +121,68 @@ class SubmitResource(object):
                                  .format(self.container_name, container_path))
                     lxd.file_push(self.container_name, resource_path, container_path)
 
-        num_passes = 0  # Number of test cases passed.
-        num_cases = len(test_cases)
-        test_case_details = []  # List of dicts each containing the details of a particular test case.
+        if language == 'python':
+            runner = PythonRunner()
+        elif language == 'javascript':
+            runner = JavascriptRunner()
+        elif language == 'julia':
+            runner = JuliaRunner()
+        else:
+            raise Exception("Runner not found for language={:}.".format(language))
 
+        try:
+            input_tuples = [tc.input() for tc in test_cases]
+            user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples)
+
+        except (FilePushError, FilePullError):
+            explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
+            return
+
+        except EngineExecutionError:
+            explanation = "Return code from executing user code in LXD container is nonzero. " \
+                          "Returning falcon HTTP 400."
+            add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
+            return
+
+        # Pull any user generated files.
         for i, tc in enumerate(test_cases):
-            input_tuple = tc.input_tuple()
-            logger.debug("Input tuple: {:}".format(input_tuple))
+            if 'USER_GENERATED_FILES' in tc.output:
+                for user_generated_filename in tc.output['USER_GENERATED_FILES']:
+                    container_filepath = "/root/{:s}".format(user_generated_filename)
 
-            if language == 'python':
-                runner = PythonRunner()
-            elif language == 'javascript':
-                runner = JavascriptRunner()
-            elif language == 'julia':
-                runner = JuliaRunner()
-            else:
-                raise Exception('Runner not found.')
-
-            try:
-                user_answer, process_info = runner.run(self.container_name, code_filename, function_name, input_tuple)
-
-            except (FilePushError, FilePullError):
-                explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
-                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
-                return
-
-            except EngineExecutionError:
-                explanation = "Return code from executing user code in LXD container is nonzero. " \
-                              "Returning falcon HTTP 400."
-                add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_400, code_filename)
-                return
-
-            if 'USER_GENERATED_FILES' in tc.input:
-                for user_generated_filename in tc.input['USER_GENERATED_FILES']:
-                    container_filepath = "/root/{:}".format(user_generated_filename)
-
-                    logger.debug("Pulling user generated file from container {:}{:}"
+                    logger.debug("Pulling user generated file from container {:s}{:s}"
                                  .format(self.container_name, container_filepath))
 
                     lxd.file_pull(self.container_name, container_filepath, user_generated_filename)
 
-            if user_answer[0] is None:
-                logger.debug("Looks like user's function returned None: output={:}".format(user_answer))
+        n_cases = len(test_cases)
+        n_passes = 0  # Number of test cases passed.
+        test_case_details = []  # List of dicts each containing the details of a particular test case.
+
+        # Verify that user outputs are all correct (i.e. check whether each test case passes or fails).
+        for input_tuple, user_output, p_info in zip(input_tuples, user_outputs, p_infos):
+            if user_output[0] is None:
+                logger.debug("Looks like user's function returned None: output={:}".format(user_output))
                 passed = False
             else:
                 try:
-                    passed, expected = problem.verify_user_solution(input_tuple, user_answer)
+                    passed, expected_output = problem.verify_user_solution(input_tuple, user_output)
                 except Exception:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
                     add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
                     return
 
             if passed:
-                num_passes += 1
+                n_passes += 1
 
             test_case_details.append({
                 'testCaseType': tc.test_type.test_name,
                 'inputString': str(input_tuple),
-                'outputString': str(user_answer),
-                'expectedString': str(expected),
+                'outputString': str(user_output),
+                'expectedString': str(expected_output),
                 'passed': passed,
-                'processInfo': process_info
+                'processInfo': p_info
             })
 
             if 'DYNAMIC_RESOURCES' in tc.input:
@@ -189,12 +190,12 @@ class SubmitResource(object):
                     logger.debug("Deleting dynamic resource: {:s}".format(dynamic_resource_path))
                     os.remove(dynamic_resource_path)
 
-        logger.info("Passed %d/%d test cases.", num_passes, num_cases)
+        logger.info("Passed %d/%d test cases.", n_passes, n_cases)
 
         resp_dict = {
-            'success': True if num_passes == num_cases else False,
-            'numTestCases': num_cases,
-            'numTestCasesPassed': num_passes,
+            'success': True if n_passes == n_cases else False,
+            'numTestCases': n_cases,
+            'numTestCasesPassed': n_passes,
             'testCaseDetails': test_case_details
         }
 
