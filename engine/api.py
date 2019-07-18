@@ -131,7 +131,7 @@ class SubmitResource(object):
             raise Exception("Runner not found for language={:}.".format(language))
 
         try:
-            input_tuples = [tc.input() for tc in test_cases]
+            input_tuples = [tc.input_tuple() for tc in test_cases]
             user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples)
 
         except (FilePushError, FilePullError):
@@ -161,7 +161,7 @@ class SubmitResource(object):
         test_case_details = []  # List of dicts each containing the details of a particular test case.
 
         # Verify that user outputs are all correct (i.e. check whether each test case passes or fails).
-        for input_tuple, user_output, p_info in zip(input_tuples, user_outputs, p_infos):
+        for input_tuple, user_output, p_info, tc in zip(input_tuples, user_outputs, p_infos, test_cases):
             if user_output[0] is None:
                 logger.debug("Looks like user's function returned None: output={:}".format(user_output))
                 passed = False
