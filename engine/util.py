@@ -60,9 +60,8 @@ def read_list_from_file(filename):
 
 def delete_file(filename):
     if os.path.isfile(filename):
-        logger.info("Deleting file: {:s}".format(filename))
+        logger.debug("Deleting file: {:s}".format(filename))
         os.remove(filename)
-    return
 
 
 def configure_lxd() -> None:
