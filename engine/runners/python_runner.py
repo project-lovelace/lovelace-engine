@@ -1,6 +1,6 @@
-import logging
 import pickle
 import shutil
+import logging
 import fileinput
 
 import engine.util as util
@@ -26,28 +26,27 @@ class FilePullError(Exception):
 
 
 class PythonRunner(AbstractRunner):
-    def run(self, container_name, code_filename, function_name, input_tuple):
-        logger.debug("Running {:s} with input {:}".format(code_filename, input_tuple))
+    def run(self, container_name, code_filename, function_name, input_tuples):
+        logger.info("Running {:s} with {:d} inputs...".format(code_filename, len(input_tuples)))
 
         run_id = code_filename.split('.')[0]
-        input_pickle = '{}.input.pickle'.format(run_id)
+        input_pickle = "{:s}.input.pickle".format(run_id)
         with open(input_pickle, mode='wb') as f:
-            logger.debug("Pickling input tuple in {:s}...".format(input_pickle))
-            pickle.dump(input_tuple, file=f)
+            logger.debug("Pickling input tuples in {:s}...".format(input_pickle))
+            pickle.dump(input_tuples, file=f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        runner_file = "{}.run.py".format(run_id)
-        shutil.copy("run_it.py", runner_file)
+        runner_file = "{:s}.run.py".format(run_id)
+        shutil.copy("run_py.py", runner_file)
 
-        # Replace "$FUNCTION_NAME" in run_it.py with function name to execute from
-        # the problem module.
-        logger.info("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
+        # Replace "$FUNCTION_NAME" in run_py.py with the actual function name to call from the problem module.
+        logger.debug("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
         with fileinput.FileInput(runner_file, inplace=True) as f:
             for line in f:
                 print(line.replace("$FUNCTION_NAME", function_name), end='')
 
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name
-            target_path = "/root/{}".format(file_name)
+            target_path = "/root/{:s}".format(file_name)
             _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
 
             if push_retval != 0:
@@ -57,7 +56,7 @@ class PythonRunner(AbstractRunner):
                 raise FilePushError(push_stdout)
 
         runner_path = "/root/{}".format(runner_file)
-        command = ['python3', runner_path]
+        command = ["python3", runner_path]
         _, exec_retval, exec_stdout = lxd.execute(container_name, command)
 
         if exec_retval != 0:
@@ -66,37 +65,41 @@ class PythonRunner(AbstractRunner):
             util.delete_file(input_pickle)
             raise EngineExecutionError(exec_stdout)
 
-        p_info = {
-            'return_value': exec_retval,
-            'stdout': exec_stdout,
-            'runtime': 0,
-            'max_mem_usage': 0
-        }
+        user_outputs = []
+        process_infos = []
+        for i, _ in enumerate(input_tuples):
+            output_pickle = "{:s}.output{:d}.pickle".format(run_id, i)
+            source_path = "/root/{:s}".format(output_pickle)
+            target_path = output_pickle
 
-        output_pickle = '{}.output.pickle'.format(run_id)
-        source_path = '/root/{}'.format(output_pickle)
-        target_path = output_pickle
+            _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
 
-        _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
+            if pull_retval != 0:
+                util.delete_file(code_filename)
+                util.delete_file(runner_file)
+                util.delete_file(input_pickle)
+                raise FilePullError(pull_stdout)
 
-        if pull_retval != 0:
-            util.delete_file(code_filename)
-            util.delete_file(runner_file)
-            util.delete_file(input_pickle)
-            raise FilePullError(pull_stdout)
+            with open(output_pickle, mode='rb') as f:
+                output_dict = pickle.load(f)
 
-        with open(output_pickle, mode='rb') as f:
-            output_dict = pickle.load(f)
+            p_info = {
+                'return_value': exec_retval,
+                'stdout': exec_stdout,
+                'runtime': output_dict['runtime'],
+                'max_mem_usage': output_dict['max_mem_usage']
+            }
 
-        user_output = output_dict['user_output']
-        p_info['runtime'] = output_dict['runtime']
-        p_info['max_mem_usage'] = output_dict['max_mem_usage']
+            user_outputs.append(output_dict['user_output'])
+            process_infos.append(p_info)
 
-        logger.debug("Finished running user code.")
-        logger.debug("runtime: {:g} s, max_mem_usage: {:g} kB".format(p_info['runtime'], p_info['max_mem_usage']))
+            logger.debug("runtime: {:g} s, max_mem_usage: {:g} kB".format(p_info['runtime'], p_info['max_mem_usage']))
+
+            util.delete_file(output_pickle)
+
+        logger.info("Finished running user code.")
 
         util.delete_file(input_pickle)
-        util.delete_file(output_pickle)
         util.delete_file(runner_file)
 
-        return user_output, p_info
+        return user_outputs, process_infos

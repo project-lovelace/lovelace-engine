@@ -3,39 +3,39 @@ import os
 import pickle
 
 run_id = os.path.basename(__file__).split('.')[0]
-
-code_file = '{}.jl'.format(run_id)
-
-input_pickle = '{}.input.pickle'.format(run_id)
-output_pickle = '{}.output.pickle'.format(run_id)
-
-with open(input_pickle, mode='rb') as f:
-    input_params = pickle.load(f)
+input_pickle = '{:s}.input.pickle'.format(run_id)
+code_file = '{:s}.jl'.format(run_id)
 
 j = julia.Julia()
 j.include("julia_runner_util.jl")
 j.include(code_file)
 
-j.timed_function_call(j.$FUNCTION_NAME, input_params)  # Call function to pre/compile.
-julia_run = j.timed_function_call(j.$FUNCTION_NAME, input_params)
+with open(input_pickle, mode='rb') as f:
+    input_tuples = pickle.load(f)
 
-user_output = julia_run[0]
-runtime = julia_run[1]
-bytes_allocated = julia_run[2]
-max_mem_usage = bytes_allocated / 1024
+for i, input_tuple in enumerate(input_tuples):
+    output_pickle = '{:s}.output{:d}.pickle'.format(run_id, i)
 
-user_output = user_output if type(user_output) is tuple else (user_output,)
+    if i == 0:
+        # Call function to pre/compile. We need to do this if we want accurate performance statistics for the first
+        # test case. $FUNCTION_NAME will be replaced by the name of the user's function by the JuliaRunner
+        # before this script is run.
+        j.timed_function_call(j.$FUNCTION_NAME, input_tuple)
 
-# print("User input: {:}".format(user_input))
-# print("User output: {:}".format(user_output))
-# print("Runtime: {:} seconds".format(runtime))
-# print("Memory allocated: {:} bytes".format(bytes_allocated))
+    julia_run = j.timed_function_call(j.$FUNCTION_NAME, input_tuple)
 
-submission_data = {
-    'user_output': user_output,
-    'runtime': runtime,
-    'max_mem_usage': max_mem_usage,
-}
+    user_output = julia_run[0]
+    runtime = julia_run[1]
+    bytes_allocated = julia_run[2]
+    max_mem_usage = bytes_allocated / 1024
 
-with open(output_pickle, mode='wb') as f:
-    pickle.dump(submission_data, file=f)
+    user_output = user_output if isinstance(user_output, tuple) else (user_output,)
+
+    output_dict = {
+        'user_output': user_output,
+        'runtime': runtime,
+        'max_mem_usage': max_mem_usage,
+    }
+
+    with open(output_pickle, mode='wb') as f:
+        pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)
