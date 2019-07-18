@@ -4,15 +4,14 @@ import pickle
 import subprocess
 
 run_id = os.path.basename(__file__).split('.')[0]
-input_pickle = '{:s}.input.pickle'.format(run_id)
+input_pickle = "{:s}.input.pickle".format(run_id)
+code_file = "{:s}.js".format(run_id)
 
 with open(input_pickle, mode='rb') as f:
     input_tuples = pickle.load(f)
 
 for i, input_tuple in enumerate(input_tuples):
-    code_file = '{:s}.js'.format(run_id, i)
-    output_pickle = '{:s}.output{:d}.pickle'.format(run_id, i)
-    output_json = '{:s}.output{:d}.json'.format(run_id, i)
+    output_json = "{:s}.output{:d}.json".format(run_id, i)
 
     # $FUNCTION_NAME will be replaced by the name of the user's function by the JavascriptRunner
     # before this script is run.
@@ -41,7 +40,12 @@ for i, input_tuple in enumerate(input_tuples):
     with open(code_file, mode='a') as f:
         f.write(glue_code)
 
-    subprocess.run(["node", code_file])
+# Run all test cases at the same time so we only run `node` once.
+subprocess.run(["node", code_file])
+
+for i, _ in enumerate(input_tuples):
+    output_json = "{:s}.output{:d}.json".format(run_id, i)
+    output_pickle = "{:s}.output{:d}.pickle".format(run_id, i)
 
     with open(output_json, mode='r') as f:
         submission_data = json.loads(f.read())
@@ -64,4 +68,4 @@ for i, input_tuple in enumerate(input_tuples):
     }
 
     with open(output_pickle, mode='wb') as f:
-        pickle.dump(output_dict, file=f)
+        pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)

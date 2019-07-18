@@ -35,4 +35,4 @@ for i, input_tuple in enumerate(input_tuples):
         }
 
     with open(output_pickle, mode='wb') as f:
-        pickle.dump(output_dict, file=f)
+        pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)
