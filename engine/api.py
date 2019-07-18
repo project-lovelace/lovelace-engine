@@ -114,6 +114,8 @@ class SubmitResource(object):
                                  .format(resource_path, destination_path))
 
                     shutil.copyfile(resource_path, destination_path)
+
+                    dynamic_resources.append(resource_path)
                     dynamic_resources.append(destination_path)
 
                     container_path = "/root/{:}".format(dynamic_resource_filename)
