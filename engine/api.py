@@ -190,7 +190,7 @@ class SubmitResource(object):
             if 'DYNAMIC_RESOURCES' in tc.input:
                 for dynamic_resource_path in dynamic_resources:
                     logger.debug("Deleting dynamic resource: {:s}".format(dynamic_resource_path))
-                    os.remove(dynamic_resource_path)
+                    util.delete_file(dynamic_resource_path)
 
         logger.info("Passed %d/%d test cases.", n_passes, n_cases)
 
@@ -210,7 +210,7 @@ class SubmitResource(object):
 
         for file_path in static_resources:
             logging.debug("Deleting static resource {:s}".format(file_path))
-            os.remove(file_path)
+            util.delete_file(file_path)
 
 
 def parse_payload(http_request):
