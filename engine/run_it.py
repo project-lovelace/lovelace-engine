@@ -18,6 +18,7 @@ for i, input_tuple in enumerate(input_tuples):
     tracemalloc.start()
     t1 = time.time()
 
+    # $FUNCTION_NAME will be replaced by the name of the user's function before this script is run.
     user_output = user_module.$FUNCTION_NAME(*input_tuple)
 
     t2 = time.time()
