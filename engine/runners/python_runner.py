@@ -38,7 +38,7 @@ class PythonRunner(AbstractRunner):
         runner_file = "{:s}.run.py".format(run_id)
         shutil.copy("run_py.py", runner_file)
 
-        # Replace "$FUNCTION_NAME" in run_py.py with function name to call from the problem module.
+        # Replace "$FUNCTION_NAME" in run_py.py with the actual function name to call from the problem module.
         logger.debug("Replacing $FUNCTION_NAME->{:s} in {:s}...".format(function_name, runner_file))
         with fileinput.FileInput(runner_file, inplace=True) as f:
             for line in f:
@@ -46,7 +46,7 @@ class PythonRunner(AbstractRunner):
 
         for file_name in [code_filename, runner_file, input_pickle]:
             source_path = file_name
-            target_path = "/root/{}".format(file_name)
+            target_path = "/root/{:s}".format(file_name)
             _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
 
             if push_retval != 0:
