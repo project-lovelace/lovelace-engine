@@ -11,10 +11,8 @@ import traceback
 import falcon
 
 import engine.util as util
-from engine.simple_lxd import simple_lxd as lxd
-from engine.runners.python_runner import PythonRunner, FilePushError, FilePullError, EngineExecutionError
-from engine.runners.javascript_runner import JavascriptRunner
-from engine.runners.julia_runner import JuliaRunner
+from .simple_lxd import simple_lxd as lxd
+from engine.code_runner import CodeRunner, FilePushError, FilePullError, EngineExecutionError
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging.ini")
 logging.config.fileConfig(log_file_path, disable_existing_loggers=False)
@@ -123,14 +121,7 @@ class SubmitResource(object):
                                  .format(self.container_name, container_path))
                     lxd.file_push(self.container_name, resource_path, container_path)
 
-        if language == 'python':
-            runner = PythonRunner()
-        elif language == 'javascript':
-            runner = JavascriptRunner()
-        elif language == 'julia':
-            runner = JuliaRunner()
-        else:
-            raise Exception("Runner not found for language={:}.".format(language))
+        runner = CodeRunner(language)
 
         try:
             input_tuples = [tc.input_tuple() for tc in test_cases]
