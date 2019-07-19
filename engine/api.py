@@ -158,6 +158,7 @@ class SubmitResource(object):
             if user_output[0] is None:
                 logger.debug("Looks like user's function returned None: output={:}".format(user_output))
                 passed = False
+                expected_output = "Your function returned None. It shouldn't do that."
             else:
                 try:
                     passed, expected_output = problem.verify_user_solution(input_tuple, user_output)
