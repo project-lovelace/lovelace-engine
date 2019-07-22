@@ -258,7 +258,7 @@ def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_fi
     url_friendly_tb = urllib.parse.quote(tb)  # URL friendly traceback we can embed into a mailto: link.
 
     DISCOURSE_LINK = '<a href="https://discourse.projectlovelace.net/">https://discourse.projectlovelace.net/</a>'
-    EMAIL_LINK = '<a href="mailto:ada@projectlovelace.net?&subject=Project Lovelace error report' \
+    EMAIL_LINK = '<a href="mailto:ada@mg.projectlovelace.net?&subject=Project Lovelace error report' \
                  + '&body={:}%0A%0A{:}'.format(explanation, url_friendly_tb) + '">ada@mg.projectlovelace.net</a>'
 
     NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
