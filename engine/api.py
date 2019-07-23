@@ -261,10 +261,12 @@ def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_fi
     EMAIL_LINK = '<a href="mailto:ada@mg.projectlovelace.net?&subject=Project Lovelace error report' \
                  + '&body={:}%0A%0A{:}'.format(explanation, url_friendly_tb) + '">ada@mg.projectlovelace.net</a>'
 
-    NOTICE = "You should not be seeing this error :( If you have the time, we'd really appreciate\n" \
-             "if you could report this on Discourse (" + DISCOURSE_LINK + ") or\n" \
-             "via email (" + EMAIL_LINK + "). All the information is embedded in the email link\n" \
-             "so all you have to do is press send. Thanks so much!"
+    NOTICE = "A stacktrace should appear below with more information about this error which might help\n" \
+             "you debug your code. But if it's not your code then it might be our fault :( If this is a\n" \
+             "website error and you have the time, we'd really appreciate it if you could report this\n" \
+             "on Discourse (" + DISCOURSE_LINK + ") or via email (" + EMAIL_LINK + ").\n" \
+             "All the information is embedded in the email link so all you have to do is press send.\n" \
+             "Thanks so much!"
 
     error_message = "{:s}\n\n{:s}\n\nError: {:}".format(explanation, NOTICE, tb)
     resp_dict = {'error': error_message}
