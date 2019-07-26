@@ -18,7 +18,7 @@ for i, input_tuple in enumerate(input_tuples):
 
     if i == 0:
         # Call function to pre/compile. We need to do this if we want accurate performance statistics for the first
-        # test case. $FUNCTION_NAME will be replaced by the name of the user's function by the JuliaRunner
+        # test case. $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner
         # before this script is run.
         j.timed_function_call(j.$FUNCTION_NAME, input_tuple)
 
