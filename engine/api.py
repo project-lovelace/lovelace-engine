@@ -231,7 +231,7 @@ def write_code_to_file(code, language):
     :return: the name of the file containing the user's code
     """
     decoded_code = str(base64.b64decode(code), 'utf-8')
-    extension = {'python': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
+    extension = {'python': ".py", 'javascript': ".js", 'julia': ".jl", 'c': ".c"}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
 
     logger.debug("User code saved in: {:s}".format(code_filename))

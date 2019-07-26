@@ -42,6 +42,8 @@ class CodeRunner(AbstractRunner):
         elif language == "julia":
             self.run_script_filename = "run_jl.py"
             self.util_files.append("julia_runner_util.jl")
+        elif language == "c":
+            self.run_script_filename = "run_c.py"
         else:
             raise ValueError("CodeRunner does not support language={:}".format(language))
 
