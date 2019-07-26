@@ -36,6 +36,9 @@ def ctype_input_list(input_tuple):
 
 def ctype_output(var, correct_output):
     if isinstance(correct_output, str):
+        if not isinstance(var, bytes):
+            raise TypeError("Return type is wrong! Was expecting return type char* (Python bytes). "
+                            "Instead got return type {:}".format(type(var)))
         return var.decode("utf-8")
     else:
         return var
