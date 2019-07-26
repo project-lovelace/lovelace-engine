@@ -125,7 +125,8 @@ class SubmitResource(object):
 
         try:
             input_tuples = [tc.input_tuple() for tc in test_cases]
-            user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples)
+            output_tuples = [tc.output_tuple() for tc in test_cases]
+            user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples, output_tuples)
 
         except (FilePushError, FilePullError):
             explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
@@ -161,7 +162,7 @@ class SubmitResource(object):
                 expected_output = "Your function returned None. It shouldn't do that."
             else:
                 try:
-                    passed, expected_output = problem.verify_user_solution(input_tuple, user_output)
+                    passed, expected_output = problem.verify_user_solution(tc, input_tuple, user_output)
                 except Exception:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
                     add_error_to_response(resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename)
