@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y git lxc
 RUN git clone https://github.com/project-lovelace/lovelace-engine.git /engine/
 RUN git clone https://github.com/project-lovelace/lovelace-problems.git /problems/
 
-RUN pip install falcon gunicorn
+RUN pip install falcon gunicorn numpy scipy
 
 RUN mkdir -p "/var/log/lovelace/" && touch "/var/log/lovelace/lovelace-engine.log"
 
