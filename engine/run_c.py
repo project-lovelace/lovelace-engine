@@ -8,6 +8,8 @@ def infer_ctype(var):
         return ctypes.c_int
     elif isinstance(var, float):
         return ctypes.c_double
+    elif isinstance(var, bool):
+        return ctypes.c_bool
     elif isinstance(var, str):
         return ctypes.c_char_p
     else:
