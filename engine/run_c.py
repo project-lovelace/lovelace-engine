@@ -19,37 +19,46 @@ def infer_ctype(var):
     elif isinstance(var, str):
         return ctypes.c_char_p
 
-    elif isinstance(var, list):
-        # For a Python list, we add an extra argument for the size of the C array.
-        return infer_ctype(var[0]) * len(var), ctypes.c_int
-
-    elif isinstance(var, ndarray):
-        # For an array, we add extra arguments for the size of the input C array (one extra argument per dimension).
-        arr_ctype = type(as_ctypes(var))
-        types = [arr_ctype]
-        for _ in range(len(var.shape)):
-            types.append(ctypes.c_int)
-        return types
-
     else:
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
 
-def infer_argtypes(input_tuple):
-    arg_ctypes = []
-    for var in input_tuple:
-        types = infer_ctype(var)
-        if isinstance(types, (list, tuple)):
-            arg_ctypes.extend(types)
-        else:
-             arg_ctypes.append(types)
-
-    return arg_ctypes
-
-def infer_restype(output_tuple):
+def infer_arg_and_res_types(input_tuple, output_tuple):
     if len(output_tuple) > 1:
         raise NotImplementedError("C does not support multiple return values but len(output_tuple)={:d}"
                                   .format(len(output_tuple)))
-    return infer_ctype(output_tuple[0])
+
+    arg_ctypes = []
+    for var in input_tuple:
+        if isinstance(var, list):
+            if isinstance(var[0], (list, tuple)):
+                raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
+
+            arr_ctype = infer_ctype(var[0]) * len(var)
+            arg_ctypes.append(arr_ctype)
+
+            # For a Python list, we add an extra argument for the size of the C array.
+            arg_ctypes.append(ctypes.c_int)
+
+        elif isinstance(var, ndarray):
+            arr_ctype = type(as_ctypes(var))
+            arg_ctypes.append(arr_ctype)
+
+            # For a numpy ndarray, we add extra arguments for each dimension size of the input C array.
+            for _ in range(len(var.shape)):
+                arg_ctypes.append(ctypes.c_int)
+
+        else:
+            arg_ctypes.append(infer_ctype(var))
+
+    rvar = output_tuple[0]  # Return variable.
+    if isinstance(rvar, list):
+        arr_ctype = infer_ctype(rvar[0]) * len(rvar)
+        arg_ctypes.append(arr_ctype)
+        res_ctype = ctypes.c_void_p
+    else:
+        res_ctype = infer_ctype(rvar)
+
+    return arg_ctypes, res_ctype
 
 def ctype_input_list(input_tuple):
     input_list = []
@@ -111,8 +120,9 @@ lib = ctypes.cdll.LoadLibrary(os.path.join(cwd, lib_file))
 for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correct_output_tuples)):
     # Use the input and output tuple to infer the type of input arguments and return value. We do this again for each
     # test case in case outputs change type or arrays change size.
-    lib.$FUNCTION_NAME.argtypes = infer_argtypes(input_tuple)
-    lib.$FUNCTION_NAME.restype = infer_restype(correct_output_tuple)
+    arg_ctypes, res_ctype = infer_arg_and_res_types(input_tuple, correct_output_tuple)
+    lib.$FUNCTION_NAME.argtypes = arg_ctypes
+    lib.$FUNCTION_NAME.restype = res_ctype
 
     ctyped_input_list = ctype_input_list(input_tuple)
 
