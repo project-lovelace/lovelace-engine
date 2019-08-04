@@ -3,29 +3,45 @@ import ctypes
 import pickle
 import subprocess
 
+from numpy import ndarray
+from numpy.ctypeslib import as_ctypes_type, as_ctypes, as_array
+
 def infer_ctype(var):
     if isinstance(var, int):
         return ctypes.c_int
+
     elif isinstance(var, float):
         return ctypes.c_double
+
     elif isinstance(var, bool):
         return ctypes.c_bool
+
     elif isinstance(var, str):
         return ctypes.c_char_p
+
     elif isinstance(var, list):
-        # For a list, we add an extra argument for the size of the input C array.
+        # For a Python list, we add an extra argument for the size of the C array.
         return infer_ctype(var[0]) * len(var), ctypes.c_int
+
+    elif isinstance(var, ndarray):
+        # For an array, we add extra arguments for the size of the input C array (one extra argument per dimension).
+        arr_ctype = type(as_ctypes(var))
+        types = [arr_ctype]
+        for _ in range(len(var.shape)):
+            types.append(ctypes.c_int)
+        return types
+
     else:
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
 
 def infer_argtypes(input_tuple):
     arg_ctypes = []
     for var in input_tuple:
-        ctypes = infer_ctype(var)
-        if isinstance(ctypes, tuple):
-            arg_ctypes.extend(ctypes)
+        types = infer_ctype(var)
+        if isinstance(types, (list, tuple)):
+            arg_ctypes.extend(types)
         else:
-             arg_ctypes.append(ctypes)
+             arg_ctypes.append(types)
 
     return arg_ctypes
 
@@ -41,14 +57,24 @@ def ctype_input_list(input_tuple):
         if isinstance(var, str):
             # C wants bytes, not strings.
             input_list.append(ctypes.c_char_p(bytes(var, "utf-8")))
+
         elif isinstance(var, list):
             # For a list, we add an extra argument for the size of the input C array.
             array_type = infer_ctype(var[0]) * len(var)
             arr = array_type(*var)
             input_list.append(arr)
             input_list.append(len(var))
+
+        elif isinstance(var, ndarray):
+            # For an array, we add extra arguments for the size of the input C array (one extra argument per dimension).
+            arr = as_ctypes(var)
+            input_list.append(arr)
+            for s in var.shape:
+                input_list.append(s)
+
         else:
             input_list.append(var)
+
     return input_list
 
 def ctype_output(var, correct_output):
