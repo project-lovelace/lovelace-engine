@@ -12,13 +12,21 @@ def infer_ctype(var):
         return ctypes.c_bool
     elif isinstance(var, str):
         return ctypes.c_char_p
+    elif isinstance(var, list):
+        # For a list, we add an extra argument for the size of the input C array.
+        return infer_ctype(var[0]) * len(var), ctypes.c_int
     else:
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
 
 def infer_argtypes(input_tuple):
     arg_ctypes = []
     for var in input_tuple:
-        arg_ctypes.append(infer_ctype(var))
+        ctypes = infer_ctype(var)
+        if isinstance(ctypes, tuple):
+            arg_ctypes.extend(ctypes)
+        else:
+             arg_ctypes.append(ctypes)
+
     return arg_ctypes
 
 def infer_restype(output_tuple):
@@ -31,7 +39,14 @@ def ctype_input_list(input_tuple):
     input_list = []
     for k, var in enumerate(input_tuple):
         if isinstance(var, str):
+            # C wants bytes, not strings.
             input_list.append(ctypes.c_char_p(bytes(var, "utf-8")))
+        elif isinstance(var, list):
+            # For a list, we add an extra argument for the size of the input C array.
+            array_type = infer_ctype(var[0]) * len(var)
+            arr = array_type(*var)
+            input_list.append(arr)
+            input_list.append(len(var))
         else:
             input_list.append(var)
     return input_list
