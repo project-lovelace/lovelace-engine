@@ -4,9 +4,9 @@ import pickle
 import subprocess
 
 from numpy import ndarray
-from numpy.ctypeslib import as_ctypes_type, as_ctypes, as_array
+from numpy.ctypeslib import ndpointer
 
-def infer_ctype(var):
+def infer_simple_ctype(var):
     if isinstance(var, int):
         return ctypes.c_int
 
@@ -22,69 +22,70 @@ def infer_ctype(var):
     else:
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
 
-def infer_arg_and_res_types(input_tuple, output_tuple):
+def preprocess_types(input_tuple, output_tuple):
     if len(output_tuple) > 1:
         raise NotImplementedError("C does not support multiple return values but len(output_tuple)={:d}"
                                   .format(len(output_tuple)))
 
+    input_list = []
     arg_ctypes = []
+
     for var in input_tuple:
-        if isinstance(var, list):
+        if isinstance(var, str):
+            arg_ctypes.append(ctypes.c_char_p)
+
+            # C wants bytes, not strings.
+            c_str = bytes(var, "utf-8")
+            input_list.append(ctypes.c_char_p(c_str))
+
+        elif isinstance(var, list):
             if isinstance(var[0], (list, tuple)):
                 raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
 
-            arr_ctype = infer_ctype(var[0]) * len(var)
+            arr_ctype = infer_simple_ctype(var[0]) * len(var)
             arg_ctypes.append(arr_ctype)
+
+            arr = arr_ctype(*var)
+            input_list.append(arr)
 
             # For a Python list, we add an extra argument for the size of the C array.
             arg_ctypes.append(ctypes.c_int)
-
-        elif isinstance(var, ndarray):
-            arr_ctype = type(as_ctypes(var))
-            arg_ctypes.append(arr_ctype)
-
-            # For a numpy ndarray, we add extra arguments for each dimension size of the input C array.
-            for _ in range(len(var.shape)):
-                arg_ctypes.append(ctypes.c_int)
-
-        else:
-            arg_ctypes.append(infer_ctype(var))
-
-    rvar = output_tuple[0]  # Return variable.
-    if isinstance(rvar, list):
-        arr_ctype = infer_ctype(rvar[0]) * len(rvar)
-        arg_ctypes.append(arr_ctype)
-        res_ctype = ctypes.c_void_p
-    else:
-        res_ctype = infer_ctype(rvar)
-
-    return arg_ctypes, res_ctype
-
-def ctype_input_list(input_tuple):
-    input_list = []
-    for k, var in enumerate(input_tuple):
-        if isinstance(var, str):
-            # C wants bytes, not strings.
-            input_list.append(ctypes.c_char_p(bytes(var, "utf-8")))
-
-        elif isinstance(var, list):
-            # For a list, we add an extra argument for the size of the input C array.
-            array_type = infer_ctype(var[0]) * len(var)
-            arr = array_type(*var)
-            input_list.append(arr)
             input_list.append(len(var))
 
         elif isinstance(var, ndarray):
-            # For an array, we add extra arguments for the size of the input C array (one extra argument per dimension).
-            arr = as_ctypes(var)
-            input_list.append(arr)
+            arr_ctype = ndpointer(dtype=var.dtype, flags="C_CONTIGUOUS")
+            arg_ctypes.append(arr_ctype)
+            input_list.append(var)
+
+            # For a numpy ndarray, we add extra arguments for each dimension size of the input C array.
             for s in var.shape:
+                arg_ctypes.append(ctypes.c_int)
                 input_list.append(s)
 
         else:
+            arg_ctypes.append(infer_simple_ctype(var))
             input_list.append(var)
 
-    return input_list
+    rvar = output_tuple[0]  # Return variable
+
+    if isinstance(rvar, list):
+        # If the C function needs to return an array, Python must allocate memory for the array and pass it to the
+        # C function. So we add an extra argument for a pointer to the pre-allocated C array and set the return type
+        # to void.
+        if isinstance(var[0], (list, tuple)):
+            raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
+
+        arr_ctype = infer_simple_ctype(rvar[0]) * len(rvar)
+        arg_ctypes.append(arr_ctype)
+
+        arr = arr_ctype()
+        input_list.append(arr)
+
+        res_ctype = ctypes.c_void_p
+    else:
+        res_ctype = infer_simple_ctype(rvar)
+
+    return arg_ctypes, res_ctype, input_list
 
 def ctype_output(var, correct_output):
     if isinstance(correct_output, str):
@@ -115,19 +116,20 @@ subprocess.run(["gcc", "-fPIC", "-shared", "-o", lib_file, code_file], check=Tru
 # Load the compiled shared library. We use the absolute path as the cwd is not in LD_LIBRARY_PATH so cdll won't find
 # the .so file if we use a relative path or just a filename.
 cwd = os.path.dirname(os.path.realpath(__file__))
-lib = ctypes.cdll.LoadLibrary(os.path.join(cwd, lib_file))
+_lib = ctypes.cdll.LoadLibrary(os.path.join(cwd, lib_file))
 
 for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correct_output_tuples)):
     # Use the input and output tuple to infer the type of input arguments and return value. We do this again for each
     # test case in case outputs change type or arrays change size.
-    arg_ctypes, res_ctype = infer_arg_and_res_types(input_tuple, correct_output_tuple)
-    lib.$FUNCTION_NAME.argtypes = arg_ctypes
-    lib.$FUNCTION_NAME.restype = res_ctype
+    arg_ctypes, res_ctype, ctyped_input_list = preprocess_types(input_tuple, correct_output_tuple)
 
-    ctyped_input_list = ctype_input_list(input_tuple)
+    print(f"arg_ctypes={arg_ctypes}, res_ctype={res_ctype}")
+
+    _lib.$FUNCTION_NAME.argtypes = arg_ctypes
+    _lib.$FUNCTION_NAME.restype = res_ctype
 
     # $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner before this script is run.
-    user_output = lib.$FUNCTION_NAME(*ctyped_input_list)
+    user_output = _lib.$FUNCTION_NAME(*ctyped_input_list)
 
     user_output = ctype_output(user_output, correct_output_tuple[0])
 
