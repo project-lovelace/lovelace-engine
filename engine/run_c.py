@@ -85,8 +85,6 @@ def preprocess_types(input_tuple, output_tuple):
 
             output_list.append(arr)
 
-            output_list.append(arr)
-
         elif isinstance(rvar, ndarray):
             arr_ctype = ndpointer(dtype=rvar.dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
             arg_ctypes.append(arr_ctype)
