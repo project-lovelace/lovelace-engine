@@ -3,7 +3,7 @@ import ctypes
 import pickle
 import subprocess
 
-from numpy import ndarray
+from numpy import ndarray, zeros
 from numpy.ctypeslib import ndpointer
 
 def infer_simple_ctype(var):
@@ -29,6 +29,7 @@ def preprocess_types(input_tuple, output_tuple):
 
     input_list = []
     arg_ctypes = []
+    output_list = []
 
     for var in input_tuple:
         if isinstance(var, str):
@@ -72,7 +73,7 @@ def preprocess_types(input_tuple, output_tuple):
         # If the C function needs to return an array, Python must allocate memory for the array and pass it to the
         # C function. So we add an extra argument for a pointer to the pre-allocated C array and set the return type
         # to void.
-        if isinstance(var[0], (list, tuple)):
+        if isinstance(rvar[0], (list, tuple)):
             raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
 
         arr_ctype = infer_simple_ctype(rvar[0]) * len(rvar)
@@ -82,16 +83,25 @@ def preprocess_types(input_tuple, output_tuple):
         input_list.append(arr)
 
         res_ctype = ctypes.c_void_p
+
+        output_list.append(arr)
+    elif isinstance(rvar, ndarray):
+        arr_ctype = ndpointer(dtype=rvar.dtype, flags="C_CONTIGUOUS")
+        arg_ctypes.append(arr_ctype)
+
+        arr = zeros(rvar.shape, dtype=rvar.dtype)
+        input_list.append(arr)
+
+        res_ctype = ctypes.c_void_p
+
+        output_list.append(arr)
     else:
         res_ctype = infer_simple_ctype(rvar)
 
-    return arg_ctypes, res_ctype, input_list
+    return arg_ctypes, res_ctype, input_list, output_list
 
-def ctype_output(var, correct_output):
-    if isinstance(correct_output, str):
-        if not isinstance(var, bytes):
-            raise TypeError("Return type is wrong! Was expecting return type char* (Python bytes). "
-                            "Instead got return type {:}".format(type(var)))
+def ctype_output(var):
+    if isinstance(var, bytes):
         return var.decode("utf-8")
     else:
         return var
@@ -108,10 +118,14 @@ with open(input_pickle, mode='rb') as f:
 with open(correct_pickle, mode='rb') as f:
     correct_output_tuples = pickle.load(f)
 
+print("PRECOMPILE")
+
 # Compile the user's C code.
 # -fPIC for position-independent code, needed for shared libraries to work no matter where in memory they are loaded.
 # check=True will raise a CalledProcessError for non-zero return codes (user code failed to compile.)
 subprocess.run(["gcc", "-fPIC", "-shared", "-o", lib_file, code_file], check=True)
+
+print("COMPILE")
 
 # Load the compiled shared library. We use the absolute path as the cwd is not in LD_LIBRARY_PATH so cdll won't find
 # the .so file if we use a relative path or just a filename.
@@ -121,7 +135,9 @@ _lib = ctypes.cdll.LoadLibrary(os.path.join(cwd, lib_file))
 for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correct_output_tuples)):
     # Use the input and output tuple to infer the type of input arguments and return value. We do this again for each
     # test case in case outputs change type or arrays change size.
-    arg_ctypes, res_ctype, ctyped_input_list = preprocess_types(input_tuple, correct_output_tuple)
+    print(f"input_tuple={input_tuple}, output_tuple={correct_output_tuple}")
+
+    arg_ctypes, res_ctype, ctyped_input_list, output_list = preprocess_types(input_tuple, correct_output_tuple)
 
     print(f"arg_ctypes={arg_ctypes}, res_ctype={res_ctype}")
 
@@ -131,7 +147,17 @@ for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correc
     # $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner before this script is run.
     user_output = _lib.$FUNCTION_NAME(*ctyped_input_list)
 
-    user_output = ctype_output(user_output, correct_output_tuple[0])
+    print(f"user_output={user_output}")
+
+    # If the C function returns nothing, then it must have mutated some of its input arguments.
+    # We'll pull them out here.
+    if res_ctype == ctypes.c_void_p:
+        user_output = []
+        for var in output_list:
+            user_output.append(ctype_output(var))
+        user_output = tuple(user_output)
+    else:
+        user_output = ctype_output(user_output)
 
     output_dict = {
         'user_output': user_output if isinstance(user_output, tuple) else (user_output,),
