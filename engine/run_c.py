@@ -138,14 +138,10 @@ with open(input_pickle, mode='rb') as f:
 with open(correct_pickle, mode='rb') as f:
     correct_output_tuples = pickle.load(f)
 
-print("PRECOMPILE")
-
 # Compile the user's C code.
 # -fPIC for position-independent code, needed for shared libraries to work no matter where in memory they are loaded.
 # check=True will raise a CalledProcessError for non-zero return codes (user code failed to compile.)
 subprocess.run(["gcc", "-fPIC", "-shared", "-o", lib_file, code_file], check=True)
-
-print("COMPILE")
 
 # Load the compiled shared library. We use the absolute path as the cwd is not in LD_LIBRARY_PATH so cdll won't find
 # the .so file if we use a relative path or just a filename.
@@ -155,19 +151,13 @@ _lib = cdll.LoadLibrary(os.path.join(cwd, lib_file))
 for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correct_output_tuples)):
     # Use the input and output tuple to infer the type of input arguments and return value. We do this again for each
     # test case in case outputs change type or arrays change size.
-    print(f"input_tuple={input_tuple}, output_tuple={correct_output_tuple}")
-
     arg_ctypes, res_ctype, ctyped_input_list, output_list = preprocess_types(input_tuple, correct_output_tuple)
-
-    print(f"arg_ctypes={arg_ctypes}, res_ctype={res_ctype}")
 
     _lib.$FUNCTION_NAME.argtypes = arg_ctypes
     _lib.$FUNCTION_NAME.restype = res_ctype
 
     # $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner before this script is run.
     user_output = _lib.$FUNCTION_NAME(*ctyped_input_list)
-
-    print(f"user_output={user_output}")
 
     # If the C function returns nothing, then it must have mutated some of its input arguments.
     # We'll pull them out here.
