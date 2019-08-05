@@ -1,23 +1,24 @@
 import os
-import ctypes
 import pickle
 import subprocess
+
+from ctypes import cdll, POINTER, c_int, c_double, c_bool, c_char_p, c_void_p
 
 from numpy import array, ndarray, zeros
 from numpy.ctypeslib import ndpointer
 
 def infer_simple_ctype(var):
     if isinstance(var, int):
-        return ctypes.c_int
+        return c_int
 
     elif isinstance(var, float):
-        return ctypes.c_double
+        return c_double
 
     elif isinstance(var, bool):
-        return ctypes.c_bool
+        return c_bool
 
     elif isinstance(var, str):
-        return ctypes.c_char_p
+        return c_char_p
 
     else:
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
@@ -29,11 +30,11 @@ def preprocess_types(input_tuple, output_tuple):
 
     for var in input_tuple:
         if isinstance(var, str):
-            arg_ctypes.append(ctypes.c_char_p)
+            arg_ctypes.append(c_char_p)
 
             # C wants bytes, not strings.
             c_str = bytes(var, "utf-8")
-            input_list.append(ctypes.c_char_p(c_str))
+            input_list.append(c_char_p(c_str))
 
         elif isinstance(var, list):
             if isinstance(var[0], (list, tuple)):
@@ -46,7 +47,7 @@ def preprocess_types(input_tuple, output_tuple):
             input_list.append(arr)
 
             # For a Python list, we add an extra argument for the size of the C array.
-            arg_ctypes.append(ctypes.c_int)
+            arg_ctypes.append(c_int)
             input_list.append(len(var))
 
         elif isinstance(var, ndarray):
@@ -56,7 +57,7 @@ def preprocess_types(input_tuple, output_tuple):
 
             # For a numpy ndarray, we add extra arguments for each dimension size of the input C array.
             for s in var.shape:
-                arg_ctypes.append(ctypes.c_int)
+                arg_ctypes.append(c_int)
                 input_list.append(s)
 
         else:
@@ -80,7 +81,7 @@ def preprocess_types(input_tuple, output_tuple):
 
             input_list.append(arr)
 
-            res_ctype = ctypes.c_void_p
+            res_ctype = c_void_p
 
             output_list.append(arr)
 
@@ -93,7 +94,7 @@ def preprocess_types(input_tuple, output_tuple):
             arr = zeros(rvar.shape, dtype=rvar.dtype)
             input_list.append(arr)
 
-            res_ctype = ctypes.c_void_p
+            res_ctype = c_void_p
 
             output_list.append(arr)
         else:
@@ -105,7 +106,7 @@ def preprocess_types(input_tuple, output_tuple):
         # the very end of the argument list.
         for var in output_tuple:
             type = infer_simple_ctype(var)
-            ptype = ctypes.POINTER(type)
+            ptype = POINTER(type)
 
             arg_ctypes.append(ptype)
 
@@ -113,12 +114,12 @@ def preprocess_types(input_tuple, output_tuple):
             input_list.append(val)
             output_list.append(val)
 
-        res_ctype = ctypes.c_void_p
+        res_ctype = c_void_p
 
     return arg_ctypes, res_ctype, input_list, output_list
 
 def ctype_output(var):
-    if isinstance(var, (ctypes.c_int, ctypes.c_double)):
+    if isinstance(var, (c_int, c_double)):
         return var.value
     elif isinstance(var, bytes):
         return var.decode("utf-8")
@@ -149,7 +150,7 @@ print("COMPILE")
 # Load the compiled shared library. We use the absolute path as the cwd is not in LD_LIBRARY_PATH so cdll won't find
 # the .so file if we use a relative path or just a filename.
 cwd = os.path.dirname(os.path.realpath(__file__))
-_lib = ctypes.cdll.LoadLibrary(os.path.join(cwd, lib_file))
+_lib = cdll.LoadLibrary(os.path.join(cwd, lib_file))
 
 for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correct_output_tuples)):
     # Use the input and output tuple to infer the type of input arguments and return value. We do this again for each
@@ -170,7 +171,7 @@ for i, (input_tuple, correct_output_tuple) in enumerate(zip(input_tuples, correc
 
     # If the C function returns nothing, then it must have mutated some of its input arguments.
     # We'll pull them out here.
-    if res_ctype == ctypes.c_void_p:
+    if res_ctype == c_void_p:
         user_output = []
         for var in output_list:
             user_output.append(ctype_output(var))
