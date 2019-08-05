@@ -23,10 +23,6 @@ def infer_simple_ctype(var):
         raise NotImplementedError("Cannot infer ctype of type(var)={:}, var={:}".format(type(var), var))
 
 def preprocess_types(input_tuple, output_tuple):
-    if len(output_tuple) > 1:
-        raise NotImplementedError("C does not support multiple return values but len(output_tuple)={:d}"
-                                  .format(len(output_tuple)))
-
     input_list = []
     arg_ctypes = []
     output_list = []
@@ -67,45 +63,64 @@ def preprocess_types(input_tuple, output_tuple):
             arg_ctypes.append(infer_simple_ctype(var))
             input_list.append(var)
 
-    rvar = output_tuple[0]  # Return variable
+    if len(output_tuple) == 1:
+        rvar = output_tuple[0]  # Return variable
 
-    if isinstance(rvar, list):
-        # If the C function needs to return an array, Python must allocate memory for the array and pass it to the
-        # C function. So we add an extra argument for a pointer to the pre-allocated C array and set the return type
-        # to void.
-        if isinstance(rvar[0], (list, tuple)):
-            raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
+        if isinstance(rvar, list):
+            # If the C function needs to return an array, Python must allocate memory for the array and pass it to the
+            # C function. So we add an extra argument for a pointer to the pre-allocated C array and set the return type
+            # to void.
+            if isinstance(rvar[0], (list, tuple)):
+                raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
 
-        arr = array(rvar)
+            arr = array(rvar)
 
-        arr_ctype = ndpointer(dtype=arr.dtype, flags="C_CONTIGUOUS")
-        arg_ctypes.append(arr_ctype)
+            arr_ctype = ndpointer(dtype=arr.dtype, flags="C_CONTIGUOUS")
+            arg_ctypes.append(arr_ctype)
 
-        input_list.append(arr)
+            input_list.append(arr)
 
-        res_ctype = ctypes.c_void_p
+            res_ctype = ctypes.c_void_p
 
-        output_list.append(arr)
+            output_list.append(arr)
 
-        output_list.append(arr)
+            output_list.append(arr)
 
-    elif isinstance(rvar, ndarray):
-        arr_ctype = ndpointer(dtype=rvar.dtype, flags="C_CONTIGUOUS")
-        arg_ctypes.append(arr_ctype)
+        elif isinstance(rvar, ndarray):
+            arr_ctype = ndpointer(dtype=rvar.dtype, flags="C_CONTIGUOUS")
+            arg_ctypes.append(arr_ctype)
 
-        arr = zeros(rvar.shape, dtype=rvar.dtype)
-        input_list.append(arr)
+            arr = zeros(rvar.shape, dtype=rvar.dtype)
+            input_list.append(arr)
 
-        res_ctype = ctypes.c_void_p
+            res_ctype = ctypes.c_void_p
 
-        output_list.append(arr)
+            output_list.append(arr)
+        else:
+            res_ctype = infer_simple_ctype(rvar)
+
     else:
-        res_ctype = infer_simple_ctype(rvar)
+        # In the case of multiple return types, we add extra input arguments (one pointer per each return variable)
+        # and the C function will mutate the values pointed to by the pointers. These arguments will always be at
+        # the very end of the argument list.
+        for var in output_tuple:
+            type = infer_simple_ctype(var)
+            ptype = ctypes.POINTER(type)
+
+            arg_ctypes.append(ptype)
+
+            val = type()  # Create a value, e.g. c_int or c_double, that will be mutated by the C function.
+            input_list.append(val)
+            output_list.append(val)
+
+        res_ctype = ctypes.c_void_p
 
     return arg_ctypes, res_ctype, input_list, output_list
 
 def ctype_output(var):
-    if isinstance(var, bytes):
+    if isinstance(var, (ctypes.c_int, ctypes.c_double)):
+        return var.value
+    elif isinstance(var, bytes):
         return var.decode("utf-8")
     else:
         return var
