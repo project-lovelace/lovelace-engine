@@ -51,7 +51,7 @@ def preprocess_types(input_tuple, output_tuple):
             input_list.append(len(var))
 
         elif isinstance(var, ndarray):
-            arr_ctype = ndpointer(dtype=var.dtype, flags="C_CONTIGUOUS")
+            arr_ctype = ndpointer(dtype=var.dtype, ndim=len(var.shape), shape=var.shape, flags="C_CONTIGUOUS")
             arg_ctypes.append(arr_ctype)
             input_list.append(var)
 
@@ -76,7 +76,7 @@ def preprocess_types(input_tuple, output_tuple):
 
             arr = array(rvar)
 
-            arr_ctype = ndpointer(dtype=arr.dtype, flags="C_CONTIGUOUS")
+            arr_ctype = ndpointer(dtype=arr.dtype, ndim=len(arr.shape), shape=arr.shape, flags="C_CONTIGUOUS")
             arg_ctypes.append(arr_ctype)
 
             input_list.append(arr)
@@ -88,7 +88,7 @@ def preprocess_types(input_tuple, output_tuple):
             output_list.append(arr)
 
         elif isinstance(rvar, ndarray):
-            arr_ctype = ndpointer(dtype=rvar.dtype, flags="C_CONTIGUOUS")
+            arr_ctype = ndpointer(dtype=rvar.dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
             arg_ctypes.append(arr_ctype)
 
             arr = zeros(rvar.shape, dtype=rvar.dtype)
