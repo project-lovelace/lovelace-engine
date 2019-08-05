@@ -3,7 +3,7 @@ import ctypes
 import pickle
 import subprocess
 
-from numpy import ndarray, zeros
+from numpy import array, ndarray, zeros
 from numpy.ctypeslib import ndpointer
 
 def infer_simple_ctype(var):
@@ -76,15 +76,19 @@ def preprocess_types(input_tuple, output_tuple):
         if isinstance(rvar[0], (list, tuple)):
             raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
 
-        arr_ctype = infer_simple_ctype(rvar[0]) * len(rvar)
+        arr = array(rvar)
+
+        arr_ctype = ndpointer(dtype=arr.dtype, flags="C_CONTIGUOUS")
         arg_ctypes.append(arr_ctype)
 
-        arr = arr_ctype()
         input_list.append(arr)
 
         res_ctype = ctypes.c_void_p
 
         output_list.append(arr)
+
+        output_list.append(arr)
+
     elif isinstance(rvar, ndarray):
         arr_ctype = ndpointer(dtype=rvar.dtype, flags="C_CONTIGUOUS")
         arg_ctypes.append(arr_ctype)
