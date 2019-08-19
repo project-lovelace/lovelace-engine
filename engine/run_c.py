@@ -4,7 +4,7 @@ import subprocess
 
 from ctypes import cdll, POINTER, c_int, c_double, c_bool, c_char_p, c_void_p
 
-from numpy import array, ndarray, zeros
+from numpy import array, ndarray, zeros, arange, uintp, intc
 from numpy.ctypeslib import ndpointer
 
 def infer_simple_ctype(var):
@@ -51,9 +51,24 @@ def preprocess_types(input_tuple, output_tuple):
             input_list.append(len(var))
 
         elif isinstance(var, ndarray):
-            arr_ctype = ndpointer(dtype=var.dtype, ndim=len(var.shape), shape=var.shape, flags="C_CONTIGUOUS")
-            arg_ctypes.append(arr_ctype)
-            input_list.append(var)
+            if len(var.shape) == 1:
+                arr_ctype = ndpointer(dtype=var.dtype, ndim=len(var.shape), shape=var.shape, flags="C_CONTIGUOUS")
+                arg_ctypes.append(arr_ctype)
+                input_list.append(var)
+
+            elif len(var.shape) == 2:
+                # If the numpy ndarray is two-dimensional then we want to pass in an array of pointers of type uintp
+                # which corresponds to a double** type. This enables the C function to index into the array as if it
+                # were a 2D array, e.g. like arr[i][j]. We could pass it in as we do for the 1D case but then the C
+                # function would be restricted to indexing the array linearly, e.g. arr[i].
+                var_pp = (var.ctypes.data + arange(var.shape[0]) * var.strides[0]).astype(uintp)
+                var_ptr_t = ndpointer(dtype=uintp)
+
+                arg_ctypes.append(var_ptr_t)
+                input_list.append(var_pp)
+
+            else:
+                raise NotImplementedError("Cannot preprocess input numpy ndarray of shape {:}".format(var.shape))
 
             # For a numpy ndarray, we add extra arguments for each dimension size of the input C array.
             for s in var.shape:
@@ -86,22 +101,35 @@ def preprocess_types(input_tuple, output_tuple):
             output_list.append(arr)
 
         elif isinstance(rvar, ndarray):
-            arr_ctype = ndpointer(dtype=rvar.dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
-            arg_ctypes.append(arr_ctype)
+            if len(rvar.shape) == 1:
+                arr_ctype = ndpointer(dtype=rvar.dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
+                arr = zeros(rvar.shape, dtype=rvar.dtype)
 
-            arr = zeros(rvar.shape, dtype=rvar.dtype)
-            input_list.append(arr)
+                arg_ctypes.append(arr_ctype)
+                input_list.append(arr)
+                output_list.append(arr)
+
+            elif len(rvar.shape) == 2:
+                arr = zeros(rvar.shape, dtype=intc)
+                arr_pp = (arr.ctypes.data + arange(arr.shape[0]) * arr.strides[0]).astype(uintp)
+                arr_ptr_t = ndpointer(dtype=uintp)
+
+                arg_ctypes.append(arr_ptr_t)
+                input_list.append(arr_pp)
+                output_list.append(arr)
+
+            else:
+                raise NotImplementedError("Cannot preprocess output numpy ndarray of shape {:}".format(var.shape))
 
             res_ctype = c_void_p
 
-            output_list.append(arr)
         else:
             res_ctype = infer_simple_ctype(rvar)
 
     else:
         # In the case of multiple return types, we add extra input arguments (one pointer per each return variable)
         # and the C function will mutate the values pointed to by the pointers. These arguments will always be at
-        # the very end of the argument list.
+        # the very end of the argument list. The return type is set to void.
         for var in output_tuple:
             type = infer_simple_ctype(var)
             ptype = POINTER(type)
