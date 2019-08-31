@@ -4,7 +4,7 @@ import subprocess
 
 from ctypes import cdll, POINTER, c_int, c_double, c_bool, c_char_p, c_void_p
 
-from numpy import array, ndarray, zeros, arange, uintp, intc
+from numpy import array, ndarray, zeros, arange, issubdtype, integer, uintp, intc
 from numpy.ctypeslib import ndpointer
 
 def infer_simple_ctype(var):
@@ -51,6 +51,9 @@ def preprocess_types(input_tuple, output_tuple):
             input_list.append(len(var))
 
         elif isinstance(var, ndarray):
+            if issubdtype(var.dtype, integer):
+                var = var.astype(intc)
+
             if len(var.shape) == 1:
                 arr_ctype = ndpointer(dtype=var.dtype, ndim=len(var.shape), shape=var.shape, flags="C_CONTIGUOUS")
                 arg_ctypes.append(arr_ctype)
@@ -101,16 +104,18 @@ def preprocess_types(input_tuple, output_tuple):
             output_list.append(arr)
 
         elif isinstance(rvar, ndarray):
+            new_dtype = intc if issubdtype(rvar.dtype, integer) else rvar.dtype
+
             if len(rvar.shape) == 1:
-                arr_ctype = ndpointer(dtype=rvar.dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
-                arr = zeros(rvar.shape, dtype=rvar.dtype)
+                arr_ctype = ndpointer(dtype=new_dtype, ndim=len(rvar.shape), shape=rvar.shape, flags="C_CONTIGUOUS")
+                arr = zeros(rvar.shape, dtype=new_dtype)
 
                 arg_ctypes.append(arr_ctype)
                 input_list.append(arr)
                 output_list.append(arr)
 
             elif len(rvar.shape) == 2:
-                arr = zeros(rvar.shape, dtype=intc)
+                arr = zeros(rvar.shape, dtype=new_dtype)
                 arr_pp = (arr.ctypes.data + arange(arr.shape[0]) * arr.strides[0]).astype(uintp)
                 arr_ptr_t = ndpointer(dtype=uintp)
 
@@ -119,7 +124,7 @@ def preprocess_types(input_tuple, output_tuple):
                 output_list.append(arr)
 
             else:
-                raise NotImplementedError("Cannot preprocess output numpy ndarray of shape {:}".format(var.shape))
+                raise NotImplementedError("Cannot preprocess output numpy ndarray of shape {:}".format(rvar.shape))
 
             res_ctype = c_void_p
 
