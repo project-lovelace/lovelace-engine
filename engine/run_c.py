@@ -40,8 +40,12 @@ def preprocess_types(input_tuple, output_tuple):
             if isinstance(var[0], (list, tuple)):
                 raise NotImplementedError(f"Cannot infer ctype of a list containing lists or tuples: var={var}")
 
-            arr_ctype = infer_simple_ctype(var[0]) * len(var)
+            elem_ctype = infer_simple_ctype(var[0])
+            arr_ctype = elem_ctype * len(var)
             arg_ctypes.append(arr_ctype)
+
+            if elem_ctype == c_char_p:
+                var = [bytes(s, "utf-8") for s in var]
 
             arr = arr_ctype(*var)
             input_list.append(arr)
