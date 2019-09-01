@@ -13,12 +13,10 @@ with open(input_pickle, mode='rb') as f:
     input_tuples = pickle.load(f)
 
 for i, input_tuple in enumerate(input_tuples):
-    output_pickle = '{:s}.output{:d}.pickle'.format(run_id, i)
-
     tracemalloc.start()
     t1 = time.time()
 
-    # $FUNCTION_NAME will be replaced by the name of the user's function by the PythonRunner before this script is run.
+    # $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner before this script is run.
     user_output = user_module.$FUNCTION_NAME(*input_tuple)
 
     t2 = time.time()
@@ -34,5 +32,6 @@ for i, input_tuple in enumerate(input_tuples):
         'max_mem_usage': max_mem_usage
         }
 
+    output_pickle = '{:s}.output{:d}.pickle'.format(run_id, i)
     with open(output_pickle, mode='wb') as f:
         pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)

@@ -27,13 +27,14 @@ class FilePullError(Exception):
 
 class AbstractRunner(metaclass=ABCMeta):
     @abstractmethod
-    def run(self, container_name, filename, function_name, input_str):
+    def run(self, container_name, filename, function_name, input_tuples, output_tuples):
         """Execute the given file using input_str as input through stdin and return the program's output."""
 
 
 class CodeRunner(AbstractRunner):
     def __init__(self, language):
         self.util_files = []
+        self.push_correct_output = False
 
         if language == "python":
             self.run_script_filename = "run_py.py"
@@ -42,10 +43,13 @@ class CodeRunner(AbstractRunner):
         elif language == "julia":
             self.run_script_filename = "run_jl.py"
             self.util_files.append("julia_runner_util.jl")
+        elif language == "c":
+            self.run_script_filename = "run_c.py"
+            self.push_correct_output = True
         else:
             raise ValueError("CodeRunner does not support language={:}".format(language))
 
-    def run(self, container_name, code_filename, function_name, input_tuples):
+    def run(self, container_name, code_filename, function_name, input_tuples, correct_output_tuples):
         logger.info("Running {:s} with {:d} inputs...".format(code_filename, len(input_tuples)))
 
         run_id = code_filename.split('.')[0]
@@ -69,6 +73,14 @@ class CodeRunner(AbstractRunner):
 
         # Push all the files we need into the Linux container.
         required_files = [code_filename, runner_file, input_pickle]
+        if self.push_correct_output:
+            correct_output_pickle = "{:s}.correct.pickle".format(run_id)
+            with open(correct_output_pickle, mode='wb') as f:
+                logger.debug("Pickling correct output tuples in {:s}...".format(correct_output_pickle))
+                pickle.dump(correct_output_tuples, file=f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            required_files.append(correct_output_pickle)
+
         for file_name in required_files + self.util_files:
             source_path = file_name
             target_path = "/root/{:s}".format(file_name)

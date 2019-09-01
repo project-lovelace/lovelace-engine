@@ -125,7 +125,8 @@ class SubmitResource(object):
 
         try:
             input_tuples = [tc.input_tuple() for tc in test_cases]
-            user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples)
+            output_tuples = [tc.output_tuple() for tc in test_cases]
+            user_outputs, p_infos = runner.run(self.container_name, code_filename, function_name, input_tuples, output_tuples)
 
         except (FilePushError, FilePullError):
             explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
@@ -231,7 +232,7 @@ def write_code_to_file(code, language):
     :return: the name of the file containing the user's code
     """
     decoded_code = str(base64.b64decode(code), 'utf-8')
-    extension = {'python': '.py', 'julia': '.jl', 'javascript': '.js'}.get(language)
+    extension = {'python': ".py", 'javascript': ".js", 'julia': ".jl", 'c': ".c"}.get(language)
     code_filename = util.write_str_to_file(decoded_code, extension)
 
     logger.debug("User code saved in: {:s}".format(code_filename))

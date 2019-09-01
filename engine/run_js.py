@@ -13,7 +13,7 @@ with open(input_pickle, mode='rb') as f:
 for i, input_tuple in enumerate(input_tuples):
     output_json = "{:s}.output{:d}.json".format(run_id, i)
 
-    # $FUNCTION_NAME will be replaced by the name of the user's function by the JavascriptRunner
+    # $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner
     # before this script is run.
     func_call_str = "$FUNCTION_NAME(" + ", ".join([json.dumps(arg) for arg in input_tuple]) + ")"
 
@@ -45,8 +45,6 @@ subprocess.run(["node", code_file])
 
 for i, _ in enumerate(input_tuples):
     output_json = "{:s}.output{:d}.json".format(run_id, i)
-    output_pickle = "{:s}.output{:d}.pickle".format(run_id, i)
-
     with open(output_json, mode='r') as f:
         submission_data = json.loads(f.read())
 
@@ -67,5 +65,6 @@ for i, _ in enumerate(input_tuples):
         'max_mem_usage': max_mem_usage,
     }
 
+    output_pickle = "{:s}.output{:d}.pickle".format(run_id, i)
     with open(output_pickle, mode='wb') as f:
         pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)
