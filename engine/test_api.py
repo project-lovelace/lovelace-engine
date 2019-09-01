@@ -8,7 +8,7 @@ import unittest
 
 
 class TestApi(unittest.TestCase):
-    solutions_dir = "../solutions/"
+    solutions_dir = "/home/ada/lovelace/lovelace-solutions/"
     python_solutions_dir = os.path.join(solutions_dir, "python")
     javascript_solutions_dir = os.path.join(solutions_dir, "javascript")
     julia_solutions_dir = os.path.join(solutions_dir, "julia")
@@ -35,41 +35,41 @@ class TestApi(unittest.TestCase):
 
         return response_data
 
-    # def test_all_problems_python_success(self):
-    #     for relative_filepath in glob.glob(os.path.join(self.python_solutions_dir, "*.py")):
-    #         absolute_filepath = os.path.join(self.python_solutions_dir, os.path.basename(relative_filepath))
-    #
-    #         print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
-    #         t1 = time.perf_counter()
-    #         result = self.submit_solution(absolute_filepath)
-    #         t2 = time.perf_counter()
-    #         print("{:.6f} seconds.".format(t2 - t1))
-    #
-    #         self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
-    #
-    # def test_all_problems_javascript_success(self):
-    #     for relative_filepath in glob.glob(os.path.join(self.javascript_solutions_dir, "*.js")):
-    #         absolute_filepath = os.path.join(self.javascript_solutions_dir, os.path.basename(relative_filepath))
-    #
-    #         print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
-    #         t1 = time.perf_counter()
-    #         result = self.submit_solution(absolute_filepath)
-    #         t2 = time.perf_counter()
-    #         print("{:.6f} seconds.".format(t2 - t1))
-    #
-    #         self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
-    #
-    # def test_all_problems_julia_success(self):
-    #     for relative_filepath in glob.glob(os.path.join(self.julia_solutions_dir, "*.jl")):
-    #         absolute_filepath = os.path.join(self.julia_solutions_dir, os.path.basename(relative_filepath))
-    #
-    #         print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
-    #         t1 = time.perf_counter()
-    #         result = self.submit_solution(absolute_filepath)
-    #         t2 = time.perf_counter()
-    #         print("{:.6f} seconds.".format(t2 - t1))
-    #
-    #         self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
+    def test_all_problems_python_success(self):
+        for relative_filepath in glob.glob(os.path.join(self.python_solutions_dir, "*.py")):
+            absolute_filepath = os.path.join(self.python_solutions_dir, os.path.basename(relative_filepath))
+
+            print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
+            t1 = time.perf_counter()
+            result = self.submit_solution(absolute_filepath)
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
+
+    def test_all_problems_javascript_success(self):
+        for relative_filepath in glob.glob(os.path.join(self.javascript_solutions_dir, "*.js")):
+            absolute_filepath = os.path.join(self.javascript_solutions_dir, os.path.basename(relative_filepath))
+
+            print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
+            t1 = time.perf_counter()
+            result = self.submit_solution(absolute_filepath)
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
+
+    def test_all_problems_julia_success(self):
+        for relative_filepath in glob.glob(os.path.join(self.julia_solutions_dir, "*.jl")):
+            absolute_filepath = os.path.join(self.julia_solutions_dir, os.path.basename(relative_filepath))
+
+            print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
+            t1 = time.perf_counter()
+            result = self.submit_solution(absolute_filepath)
+            t2 = time.perf_counter()
+            print("{:.6f} seconds.".format(t2 - t1))
+
+            self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_c_success(self):
         for relative_filepath in glob.glob(os.path.join(self.c_solutions_dir, "*.c")):
