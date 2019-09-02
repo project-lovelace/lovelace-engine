@@ -1,8 +1,11 @@
+import json
 import pickle
 import shutil
 import logging
 import fileinput
 from abc import ABCMeta, abstractmethod
+
+import numpy as np
 
 import engine.util as util
 from .simple_lxd import simple_lxd as lxd
@@ -31,9 +34,18 @@ class AbstractRunner(metaclass=ABCMeta):
         """Execute the given file using input_str as input through stdin and return the program's output."""
 
 
+# In case we need to serialize a numpy.ndarray to JSON.
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 class CodeRunner(AbstractRunner):
     def __init__(self, language):
         self.util_files = []
+        self.file_type = "pickle"
         self.push_correct_output = False
 
         if language == "python":
@@ -42,7 +54,7 @@ class CodeRunner(AbstractRunner):
             self.run_script_filename = "run_js.py"
         elif language == "julia":
             self.run_script_filename = "run_jl.py"
-            self.util_files.append("julia_runner_util.jl")
+            self.file_type = "json"
         elif language == "c":
             self.run_script_filename = "run_c.py"
             self.push_correct_output = True
@@ -55,10 +67,16 @@ class CodeRunner(AbstractRunner):
         run_id = code_filename.split('.')[0]
 
         # Pickle all the input tuples into one file.
-        input_pickle = "{:s}.input.pickle".format(run_id)
-        with open(input_pickle, mode='wb') as f:
-            logger.debug("Pickling input tuples in {:s}...".format(input_pickle))
-            pickle.dump(input_tuples, file=f, protocol=pickle.HIGHEST_PROTOCOL)
+        if self.file_type == "pickle":
+            input_pickle = "{:s}.input.pickle".format(run_id)
+            with open(input_pickle, mode='wb') as f:
+                logger.debug("Pickling input tuples in {:s}...".format(input_pickle))
+                pickle.dump(input_tuples, file=f, protocol=pickle.HIGHEST_PROTOCOL)
+        elif self.file_type == "json":
+            input_pickle = "{:s}.input.json".format(run_id)
+            with open(input_pickle, mode="w") as f:
+                logger.debug("Pickling input tuples in {:s}...".format(input_pickle))
+                json.dump(input_tuples, f, cls=NumpyEncoder)
 
         # Copy the relevant boilerplate run script into the current working directory.
         runner_file = "{:s}.run.py".format(run_id)
