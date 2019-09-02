@@ -1,41 +1,77 @@
-import julia
 import os
+import json
 import pickle
+import subprocess
 
 run_id = os.path.basename(__file__).split('.')[0]
-input_pickle = '{:s}.input.pickle'.format(run_id)
+input_json = '{:s}.input.json'.format(run_id)
 code_file = '{:s}.jl'.format(run_id)
 
-j = julia.Julia()
-j.include("julia_runner_util.jl")
-j.include(code_file)
+glue_code = '''
+import JSON
 
-with open(input_pickle, mode='rb') as f:
-    input_tuples = pickle.load(f)
+timed_function_call(f, input) = @timed f(input...)
 
-for i, input_tuple in enumerate(input_tuples):
-    output_pickle = '{:s}.output{:d}.pickle'.format(run_id, i)
+function json_arr_dim(a)
+    if length(size(a)) > 0
+        return 1 + json_arr_dim(a[1])
+    else
+        return 0
+    end
+end
 
-    if i == 0:
-        # Call function to pre/compile. We need to do this if we want accurate performance statistics for the first
-        # test case. $FUNCTION_NAME will be replaced by the name of the user's function by the CodeRunner
-        # before this script is run.
-        j.timed_function_call(j.$FUNCTION_NAME, input_tuple)
+function json_arr_eltype(a)
+    if eltype(a) == Any
+        return json_arr_eltype(a[1])
+    else
+        return eltype(a)
+    end
+end
 
-    julia_run = j.timed_function_call(j.$FUNCTION_NAME, input_tuple)
+juliafy_json(a::Array) = convert(Array{{json_arr_eltype(a), json_arr_dim(a)}}, hcat(a...))
+juliafy_json(t) = t
 
-    user_output = julia_run[0]
-    runtime = julia_run[1]
-    bytes_allocated = julia_run[2]
-    max_mem_usage = bytes_allocated / 1024
+input_tuples = JSON.Parser.parsefile("{:s}")
+
+for (i, it) in enumerate(input_tuples)
+    it = [juliafy_json(elem) for elem in it]
+    ot = $FUNCTION_NAME(it...)
+    open("{:s}.output$i.json", "w") do f
+       JSON.print(f, ot)
+    end
+end
+'''.format(input_json, run_id)
+
+# This will append glue code to the code file to run the test cases.
+with open(code_file, mode='a') as f:
+    f.write(glue_code)
+
+subprocess.run(["julia", code_file])
+
+with open(input_json, mode='rb') as f:
+    input_tuples = json.load(f)
+
+for i, _ in enumerate(input_tuples):
+    output_json = "{:s}.output{:d}.json".format(run_id, i+1)
+
+    with open(output_json, mode='r') as f:
+        user_output = json.loads(f.read())
+
+    if isinstance(user_output, list) and len(user_output) == 1 and isinstance(user_output[0], list):
+        user_output = (user_output[0],)  # Solution is a list
+    elif isinstance(user_output, list):
+        user_output = tuple(user_output)  # Solution is a "multiple return"
+    else:
+        user_output = (user_output,)  # Solution is a string or number
 
     user_output = user_output if isinstance(user_output, tuple) else (user_output,)
 
     output_dict = {
         'user_output': user_output,
-        'runtime': runtime,
-        'max_mem_usage': max_mem_usage,
+        'runtime': 0,
+        'max_mem_usage': 0,
     }
 
+    output_pickle = "{:s}.output{:d}.pickle".format(run_id, i)
     with open(output_pickle, mode='wb') as f:
         pickle.dump(output_dict, file=f, protocol=pickle.HIGHEST_PROTOCOL)
