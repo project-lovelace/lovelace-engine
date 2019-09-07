@@ -41,7 +41,7 @@ def docker_init(image_name="lovelace-code-test"):
     logger.info('Building docker image "{}" for code test containers in {}'.format(image_name, docker_dir))
 
     try:
-        ret = subprocess.run(["docker", "build", "-t", image_name, "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True)
+        ret = subprocess.run(["docker", "build", "-t", image_name, "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True, encoding="utf8")
     except subprocess.CalledProcessError:
         logger.error("Failed to build docker image! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
@@ -61,12 +61,23 @@ def create_docker_container(name=None, image_name="lovelace-code-test", remove=F
     if remove:
         cmd.append("--rm")
     cmd.append(image_name)
+
     logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
+
     try:
-        ret = subprocess.run(cmd, check=True)
+        ret = subprocess.run(cmd, check=True, encoding="utf8")
     except subprocess.CalledProcessError:
         logger.error("Failed to start docker container! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
+
+    try:
+        ret = subprocess.run(["docker", "ps", "-lq"], check=True, stdout=subprocess.PIPE, encoding="utf8")
+    except subprocess.CalledProcessError:
+        logger.error("Failed to get id of docker container! Please check that docker is installed and that the engine has access to run docker commands.")
+        raise
+    container_id = ret.stdout.strip()
+
+    return container_id
 
 
 
@@ -77,7 +88,9 @@ class SubmitResource(object):
         self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # Start a container to use for all submissions
-        create_docker_container(self.container_name)
+        #TODO this container_name might not be unique!
+        self.container_id = create_docker_container(self.container_name)
+        logger.debug("Docker container id: {}".format(self.container_id))
 
     def on_post(self, req, resp):
         payload = req.media
