@@ -1,21 +1,18 @@
+import os
+import json
 import base64
+import shutil
+import urllib
+import logging
 import datetime
 import importlib
-import json
-import logging
-import os
-import shutil
-import subprocess
 import traceback
-import urllib
 
 import falcon
 
 import engine.util as util
-# from .simple_lxd import simple_lxd as lxd
+from .simple_lxd import simple_lxd as lxd
 from engine.code_runner import CodeRunner, FilePushError, FilePullError, EngineExecutionError
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging.ini")
 logging.config.fileConfig(log_file_path, disable_existing_loggers=False)
@@ -25,37 +22,16 @@ cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
 
 
-
-
-def docker_init():
-    """Build docker image for code test containers"""
-    # TODO: check if we need to build, or if the image already exists
-    # docker build -t lovelace-code-test .
-    # docker build -t lovelace-code-test -f APP_DIR/code_test.Dockerfile APP_DIR
-
-    docker_dir = os.path.dirname(SCRIPT_DIR)
-    logger.info("Building docker image for code test containers in {}".format(docker_dir))
-
-    subprocess.run(["docker", "build", "-t", "lovelace-code-test", "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True)
-    # args = ["docker", "build", "-t", "lovelace-code-test", "-f", APP_DIR + "/code_test.Dockerfile", APP_DIR]
-    # print(" ".join(args))
-
-
-def create_container():
-    # docker
-    pass
-
-
-
 class SubmitResource(object):
     def __init__(self):
         self.pid = os.getpid()
         self.container_image = "lovelace-image"
         self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
-        # Start a container to use for all submissions
+        logger.info("Launching Linux container {:s} (pid={:d}) from image {:s}..."
+                    .format(self.container_name, self.pid, self.container_image))
 
-        create_container()
+        lxd.launch(self.container_image, name=self.container_name, profile="lovelace")
 
     def on_post(self, req, resp):
         payload = req.media
@@ -308,4 +284,4 @@ app.add_error_handler(
     Exception,
     lambda ex, req, resp, params: logger.exception(ex)
 )
-docker_init()
+util.configure_lxd()
