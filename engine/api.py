@@ -29,9 +29,6 @@ os.chdir(cwd)
 
 def docker_init():
     """Build docker image for code test containers"""
-    # TODO: check if we need to build, or if the image already exists
-    # docker build -t lovelace-code-test .
-    # docker build -t lovelace-code-test -f APP_DIR/code_test.Dockerfile APP_DIR
 
     docker_dir = os.path.dirname(SCRIPT_DIR)
     logger.info("Building docker image for code test containers in {}".format(docker_dir))
@@ -41,9 +38,6 @@ def docker_init():
     except subprocess.CalledProcessError:
         logger.error("Failed to build docker image! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
-
-    # args = ["docker", "build", "-t", "lovelace-code-test", "-f", APP_DIR + "/code_test.Dockerfile", APP_DIR]
-    # print(" ".join(args))
 
 
 def create_container():
