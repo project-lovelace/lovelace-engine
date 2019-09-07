@@ -27,34 +27,53 @@ os.chdir(cwd)
 
 
 
-def docker_init():
-    """Build docker image for code test containers"""
+def docker_init(image_name="lovelace-code-test"):
+    """Build docker image for code test containers
+
+    Syntax to build docker image (from inside Dockerfile dir):
+    docker build -t <image_name> .
+
+    Syntax to build docker image (from OUTSIDE Dockerfile dir):
+    docker build -t <image_name> -f /path/to/Dockerfile /path/to/docker_dir
+    """
 
     docker_dir = os.path.dirname(SCRIPT_DIR)
-    logger.info("Building docker image for code test containers in {}".format(docker_dir))
+    logger.info('Building docker image "{}" for code test containers in {}'.format(image_name, docker_dir))
 
     try:
-        ret = subprocess.run(["docker", "build", "-t", "lovelace-code-test", "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True)
+        ret = subprocess.run(["docker", "build", "-t", image_name, "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True)
     except subprocess.CalledProcessError:
         logger.error("Failed to build docker image! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
 
 
-def create_container():
-    # docker
-    pass
+def create_docker_container(name, image_name="lovelace-code-test", remove=True):
+    """Create a docker container
+
+    Syntax to create a docker container (as daemon):
+    docker run -d --name <container_name> <image_name>
+
+    Note: container name must be unique.
+    """
+    if remove:
+        pass
+    logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
+    try:
+        ret = subprocess.run(["docker", "run", "-d", "--name", name, image_name])
+    except subprocess.CalledProcessError:
+        logger.error("Failed to start docker container! Please check that docker is installed and that the engine has access to run docker commands.")
+        raise
 
 
 
 class SubmitResource(object):
     def __init__(self):
         self.pid = os.getpid()
-        self.container_image = "lovelace-image"
+        # self.container_image = "lovelace-image"
         self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # Start a container to use for all submissions
-
-        create_container()
+        create_docker_container(self.container_name)
 
     def on_post(self, req, resp):
         payload = req.media
@@ -301,10 +320,10 @@ def add_error_to_response(resp, explanation, tb, falcon_http_error_code, code_fi
     return
 
 
+docker_init()
 app = falcon.API()
 app.add_route('/submit', SubmitResource())
 app.add_error_handler(
     Exception,
     lambda ex, req, resp, params: logger.exception(ex)
 )
-docker_init()
