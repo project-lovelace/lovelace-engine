@@ -47,7 +47,7 @@ def docker_init(image_name="lovelace-code-test"):
         raise
 
 
-def create_docker_container(name, image_name="lovelace-code-test", remove=True):
+def create_docker_container(name=None, image_name="lovelace-code-test", remove=False):
     """Create a docker container
 
     Syntax to create a docker container (as daemon):
@@ -55,11 +55,15 @@ def create_docker_container(name, image_name="lovelace-code-test", remove=True):
 
     Note: container name must be unique.
     """
+    cmd = ["docker", "run", "-d"]
+    if name:
+        cmd.extend(["--name", name])
     if remove:
-        pass
+        cmd.append("--rm")
+    cmd.append(image_name)
     logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
     try:
-        ret = subprocess.run(["docker", "run", "-d", "--name", name, image_name])
+        ret = subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError:
         logger.error("Failed to start docker container! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
