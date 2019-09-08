@@ -9,6 +9,8 @@ import subprocess
 import traceback
 import urllib
 
+import docker
+from docker.errors import ContainerError, ImageNotFound, APIError
 import falcon
 
 import engine.util as util
@@ -47,7 +49,7 @@ def docker_init(image_name="lovelace-code-test"):
         raise
 
 
-def create_docker_container(name=None, image_name="lovelace-code-test", remove=False):
+def create_docker_container(client=None, name=None, image_name="lovelace-code-test", remove=False):
     """Create a docker container
 
     Syntax to create a docker container (as daemon):
@@ -55,42 +57,34 @@ def create_docker_container(name=None, image_name="lovelace-code-test", remove=F
 
     Note: container name must be unique.
     """
-    cmd = ["docker", "run", "-d"]
-    if name:
-        cmd.extend(["--name", name])
-    if remove:
-        cmd.append("--rm")
-    cmd.append(image_name)
+
+    # TODO memory limit, time limit?
+    if not client:
+        client = docker.from_env()
+        print("client: ", client)
+        print("type(client): ", type(client))
 
     logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
 
     try:
-        ret = subprocess.run(cmd, check=True, encoding="utf8")
-    except subprocess.CalledProcessError:
+        container = client.containers.run(image_name, detach=True, name=name, remove=remove)
+    except (ContainerError, ImageNotFound, APIError):
         logger.error("Failed to start docker container! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
 
-    try:
-        ret = subprocess.run(["docker", "ps", "-lq"], check=True, stdout=subprocess.PIPE, encoding="utf8")
-    except subprocess.CalledProcessError:
-        logger.error("Failed to get id of docker container! Please check that docker is installed and that the engine has access to run docker commands.")
-        raise
-    container_id = ret.stdout.strip()
-
-    return container_id
-
+    return container.id, container.name
 
 
 class SubmitResource(object):
     def __init__(self):
         self.pid = os.getpid()
         # self.container_image = "lovelace-image"
-        self.container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # Start a container to use for all submissions
         #TODO this container_name might not be unique!
-        self.container_id = create_docker_container(self.container_name)
-        logger.debug("Docker container id: {}".format(self.container_id))
+        self.container_id, self.container_name = create_docker_container(name=container_name)
+        logger.debug("Docker container id: {}; name: {}".format(self.container_id, self.container_name))
 
     def on_post(self, req, resp):
         payload = req.media
