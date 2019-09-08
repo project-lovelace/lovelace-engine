@@ -7,12 +7,20 @@ import requests
 import unittest
 
 
+# User can set solutions dir and server/port for lovelace engine if it's different from
+# the default. Don't forget http:// at the beginning of the engine URI
+ENGINE_URI = os.environ.get("LOVELACE_ENGINE_URI", "http://localhost:14714")
+SOLUTIONS_DIR = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
+print("SOLUTIONS_DIR: ", SOLUTIONS_DIR)
+print("ENGINE_URI: ", ENGINE_URI)
+
+
 class TestApi(unittest.TestCase):
-    solutions_dir = "/home/ada/lovelace/lovelace-solutions/"
-    python_solutions_dir = os.path.join(solutions_dir, "python")
-    javascript_solutions_dir = os.path.join(solutions_dir, "javascript")
-    julia_solutions_dir = os.path.join(solutions_dir, "julia")
-    c_solutions_dir = os.path.join(solutions_dir, "c")
+
+    python_solutions_dir = os.path.join(SOLUTIONS_DIR, "python")
+    javascript_solutions_dir = os.path.join(SOLUTIONS_DIR, "javascript")
+    julia_solutions_dir = os.path.join(SOLUTIONS_DIR, "julia")
+    c_solutions_dir = os.path.join(SOLUTIONS_DIR, "c")
 
     @staticmethod
     def submit_solution(file_path):
@@ -30,7 +38,7 @@ class TestApi(unittest.TestCase):
         }
         payload_json = json.dumps(payload_dict)
 
-        response = requests.post('http://localhost:14714/submit', data=payload_json)
+        response = requests.post(ENGINE_URI + "/submit", data=payload_json)
         response_data = json.loads(response.text)
 
         return response_data
