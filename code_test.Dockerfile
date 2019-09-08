@@ -10,7 +10,7 @@ RUN pip install -r requirements.txt
 
 # TODO remove requirements.txt?
 
-ENTRYPOINT ["bash"]
+# ENTRYPOINT ["bash"]
 
 
-# CMD ["src/run.py"]
+CMD ["tail", "-f", "/dev/null"]
