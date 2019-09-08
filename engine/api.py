@@ -1,3 +1,4 @@
+import atexit
 import base64
 import datetime
 import importlib
@@ -10,7 +11,7 @@ import traceback
 import urllib
 
 import docker
-from docker.errors import BuildError, ContainerError, ImageNotFound, APIError
+from docker.errors import BuildError, ContainerError, ImageNotFound, APIError, NotFound
 import falcon
 
 import engine.util as util
@@ -76,6 +77,25 @@ def create_docker_container(client=None, name=None, image_name="lovelace-code-te
     return container.id, container.name
 
 
+def remove_docker_container(container_id):
+
+    # TODO: this is called TWICE when gunicorn shuts down. Maybe because of the way the reloader
+    # works?
+
+    logger.info("Clean up:  deleting container {}".format(container_id))
+
+    client = docker.from_env()
+
+    try:
+        container = client.containers.get(container_id)
+    except NotFound:
+        logger.info("Container {} already deleted!".format(container_id))
+        return
+    container.stop()
+    container.remove()
+    logger.info("Container deleted successfully")
+
+
 class SubmitResource():
     def __init__(self):
         self.pid = os.getpid()
@@ -87,14 +107,8 @@ class SubmitResource():
         self.container_id, self.container_name = create_docker_container(name=container_name)
         logger.debug("Docker container id: {}; name: {}".format(self.container_id, self.container_name))
 
-    def __del__(self):
-        # TODO: __del__ is NOT the proper place for this clean up code! Find a proper hook in falcon
-        logger.info("Clean up:  deleting container {} {}".format(self.container_id, self.container_name))
-        client = docker.from_env()
+        atexit.register(remove_docker_container, self.container_id)
 
-        container = client.containers.get(self.container_id)
-        container.stop()
-        container.remove()
 
 
     def on_post(self, req, resp):
