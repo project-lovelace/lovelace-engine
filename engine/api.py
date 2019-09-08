@@ -11,7 +11,6 @@ import traceback
 import urllib
 
 import docker
-from docker.errors import BuildError, ContainerError, ImageNotFound, APIError, NotFound
 import falcon
 
 import engine.util as util
@@ -48,7 +47,7 @@ def docker_init(client=None, image_name="lovelace-code-test"):
 
     try:
         image, logs = client.images.build(path=docker_dir, dockerfile="code_test.Dockerfile", tag="lovelace-code-test")
-    except (BuildError, APIError):
+    except (docker.errors.BuildError, docker.errors.APIError):
         logger.error("Failed to build docker image! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
 
@@ -70,7 +69,7 @@ def create_docker_container(client=None, name=None, image_name="lovelace-code-te
     # TODO memory limit, time limit?
     try:
         container = client.containers.run(image_name, detach=True, name=name, remove=remove)
-    except (ContainerError, ImageNotFound, APIError):
+    except (docker.errors.ContainerError, docker.errors.ImageNotFound, docker.errors.APIError):
         logger.error("Failed to start docker container! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
 
@@ -88,7 +87,7 @@ def remove_docker_container(container_id):
 
     try:
         container = client.containers.get(container_id)
-    except NotFound:
+    except docker.errors.NotFound:
         logger.info("Container {} already deleted!".format(container_id))
         return
     container.stop()
