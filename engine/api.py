@@ -76,16 +76,26 @@ def create_docker_container(client=None, name=None, image_name="lovelace-code-te
     return container.id, container.name
 
 
-class SubmitResource(object):
+class SubmitResource():
     def __init__(self):
         self.pid = os.getpid()
         # self.container_image = "lovelace-image"
         container_name = "lovelace-{:d}-{:s}".format(self.pid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # Start a container to use for all submissions
-        #TODO this container_name might not be unique!
+        # TODO this container_name might not be unique!
         self.container_id, self.container_name = create_docker_container(name=container_name)
         logger.debug("Docker container id: {}; name: {}".format(self.container_id, self.container_name))
+
+    def __del__(self):
+        # TODO: __del__ is NOT the proper place for this clean up code! Find a proper hook in falcon
+        logger.info("Clean up:  deleting container {} {}".format(self.container_id, self.container_name))
+        client = docker.from_env()
+
+        container = client.containers.get(self.container_id)
+        container.stop()
+        container.remove()
+
 
     def on_post(self, req, resp):
         payload = req.media
