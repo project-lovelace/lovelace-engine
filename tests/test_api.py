@@ -45,7 +45,11 @@ class TestApi(unittest.TestCase):
         return response_data
 
     def test_all_problems_python_success(self):
-        for relative_filepath in glob.glob(os.path.join(self.python_solutions_dir, "*.py")):
+        solution_files = glob.glob(os.path.join(self.python_solutions_dir, "*.py"))
+        if not solution_files:
+            raise Exception("Couldn't find any python solution files to test")
+
+        for relative_filepath in solution_files:
             absolute_filepath = os.path.join(self.python_solutions_dir, os.path.basename(relative_filepath))
 
             print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
@@ -57,7 +61,11 @@ class TestApi(unittest.TestCase):
             self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_javascript_success(self):
-        for relative_filepath in glob.glob(os.path.join(self.javascript_solutions_dir, "*.js")):
+        solution_files = glob.glob(os.path.join(self.javascript_solutions_dir, "*.js"))
+        if not solution_files:
+            raise Exception("Couldn't find any javascript solution files to test")
+
+        for relative_filepath in solution_files:
             absolute_filepath = os.path.join(self.javascript_solutions_dir, os.path.basename(relative_filepath))
 
             print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
@@ -69,7 +77,12 @@ class TestApi(unittest.TestCase):
             self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_julia_success(self):
-        for relative_filepath in glob.glob(os.path.join(self.julia_solutions_dir, "*.jl")):
+
+        solution_files = glob.glob(os.path.join(self.julia_solutions_dir, "*.jl"))
+        if not solution_files:
+            raise Exception("Couldn't find any julia solution files to test")
+
+        for relative_filepath in solution_files:
             absolute_filepath = os.path.join(self.julia_solutions_dir, os.path.basename(relative_filepath))
 
             print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
@@ -81,7 +94,12 @@ class TestApi(unittest.TestCase):
             self.assertTrue(result['success'], "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)))
 
     def test_all_problems_c_success(self):
-        for relative_filepath in glob.glob(os.path.join(self.c_solutions_dir, "*.c")):
+
+        solution_files = glob.glob(os.path.join(self.c_solutions_dir, "*.c"))
+        if not solution_files:
+            raise Exception("Couldn't find any c solution files to test")
+
+        for relative_filepath in solution_files:
             absolute_filepath = os.path.join(self.c_solutions_dir, os.path.basename(relative_filepath))
 
             print("Submitting {:}... ".format(absolute_filepath), end="", flush=True)
