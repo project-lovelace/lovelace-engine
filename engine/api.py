@@ -10,7 +10,7 @@ import traceback
 import urllib
 
 import docker
-from docker.errors import ContainerError, ImageNotFound, APIError
+from docker.errors import BuildError, ContainerError, ImageNotFound, APIError
 import falcon
 
 import engine.util as util
@@ -29,7 +29,7 @@ os.chdir(cwd)
 
 
 
-def docker_init(image_name="lovelace-code-test"):
+def docker_init(client=None, image_name="lovelace-code-test"):
     """Build docker image for code test containers
 
     Syntax to build docker image (from inside Dockerfile dir):
@@ -39,12 +39,15 @@ def docker_init(image_name="lovelace-code-test"):
     docker build -t <image_name> -f /path/to/Dockerfile /path/to/docker_dir
     """
 
+    if not client:
+        client = docker.from_env()
+
     docker_dir = os.path.dirname(SCRIPT_DIR)
     logger.info('Building docker image "{}" for code test containers in {}'.format(image_name, docker_dir))
 
     try:
-        ret = subprocess.run(["docker", "build", "-t", image_name, "-f", docker_dir + "/code_test.Dockerfile", docker_dir], check=True, encoding="utf8")
-    except subprocess.CalledProcessError:
+        image, logs = client.images.build(path=docker_dir, dockerfile="code_test.Dockerfile", tag="lovelace-code-test")
+    except (BuildError, APIError):
         logger.error("Failed to build docker image! Please check that docker is installed and that the engine has access to run docker commands.")
         raise
 
@@ -58,14 +61,12 @@ def create_docker_container(client=None, name=None, image_name="lovelace-code-te
     Note: container name must be unique.
     """
 
-    # TODO memory limit, time limit?
     if not client:
         client = docker.from_env()
-        print("client: ", client)
-        print("type(client): ", type(client))
 
     logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
 
+    # TODO memory limit, time limit?
     try:
         container = client.containers.run(image_name, detach=True, name=name, remove=remove)
     except (ContainerError, ImageNotFound, APIError):
