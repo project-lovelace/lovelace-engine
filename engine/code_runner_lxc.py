@@ -1,17 +1,14 @@
-import fileinput
 import json
-import logging
 import pickle
 import shutil
-import subprocess
+import logging
+import fileinput
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
 import engine.util as util
-from engine.docker_util import docker_file_push
-
-# from .simple_lxd import simple_lxd as lxd
+from .simple_lxd import simple_lxd as lxd
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +61,9 @@ class CodeRunner(AbstractRunner):
         else:
             raise ValueError("CodeRunner does not support language={:}".format(language))
 
-    def run(self, container_id, code_filename, function_name, input_tuples, correct_output_tuples):
+    def run(
+        self, container_name, code_filename, function_name, input_tuples, correct_output_tuples
+    ):
         logger.info("Running {:s} with {:d} inputs...".format(code_filename, len(input_tuples)))
 
         run_id = code_filename.split(".")[0]
@@ -107,27 +106,18 @@ class CodeRunner(AbstractRunner):
         for file_name in required_files + self.util_files:
             source_path = file_name
             target_path = "/root/{:s}".format(file_name)
+            _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
 
-            # _, push_retval, push_stdout = lxd.file_push(container_id, source_path, target_path)
-
-            try:
-                docker_file_push(container_id, source_path, target_path)
-            except subprocess.CalledProcessError:
-                # If pushing a file fails then declutter remaining files and raise an exception.
+            # If pushing a file fails then declutter remaining files and raise an exception.
+            if push_retval != 0:
                 for fn in required_files:
                     util.delete_file(fn)
-                raise FilePushError
-
-            # # If pushing a file fails then declutter remaining files and raise an exception.
-            # if push_retval != 0:
-            #     for fn in required_files:
-            #         util.delete_file(fn)
-            #     raise FilePushError(push_stdout)
+                raise FilePushError(push_stdout)
 
         # Tell the Linux container to execute the run script that will run the user's code.
         runner_path = "/root/{}".format(runner_file)
         command = ["python3", runner_path]
-        _, exec_retval, exec_stdout = lxd.execute(container_id, command)
+        _, exec_retval, exec_stdout = lxd.execute(container_name, command)
 
         # If running user code fails/crashes for whatever reason then declutter remaining files and raise an exception.
         if exec_retval != 0:
@@ -145,7 +135,7 @@ class CodeRunner(AbstractRunner):
             source_path = "/root/{:s}".format(output_pickle)
             target_path = output_pickle
 
-            _, pull_retval, pull_stdout = lxd.file_pull(container_id, source_path, target_path)
+            _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
 
             # If pulling a file fails then declutter remaining files and raise an exception.
             if pull_retval != 0:
