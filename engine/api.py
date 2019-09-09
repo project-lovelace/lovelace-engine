@@ -14,6 +14,7 @@ import docker
 import falcon
 
 import engine.util as util
+
 # from .simple_lxd import simple_lxd as lxd
 from engine.code_runner import CodeRunner, FilePushError, FilePullError, EngineExecutionError
 
@@ -25,8 +26,6 @@ logger = logging.getLogger(__name__)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 os.chdir(cwd)
-
-
 
 
 def docker_init(client=None, image_name="lovelace-code-test"):
@@ -95,7 +94,23 @@ def remove_docker_container(container_id):
     logger.info("Container deleted successfully")
 
 
-class SubmitResource():
+def docker_file_push(container_id, src_path, tgt_path, container_user="root", chown=True):
+    """Copy a file into a docker container"""
+
+    cmd = ["docker", "cp", src_path, "{}:{}".format(container_id, tgt_path)]
+    copy_msg = "{}: {} -> {}".format(container_id, src_path, tgt_path)
+    logger.debug("Copying file into docker container: " + copy_msg)
+
+    try:
+        _ = subprocess.run(cmd, check=True, encoding="utf8")
+    except subprocess.CalledProcessError:
+        logger.error("Failed to copy file into container " + copy_msg)
+        raise
+
+    # TODO chown
+
+
+class SubmitResource:
     def __init__(self):
         self.pid = os.getpid()
         # self.container_image = "lovelace-image"
@@ -160,8 +175,16 @@ class SubmitResource():
             static_resources.append(to_path)
 
             container_path = "/root/{:}".format(resource_file_name)
-            logger.debug("Pushing static resource to container {:}{:}".format(self.container_name, container_path))
-            lxd.file_push(self.container_name, from_path, container_path)
+            logger.debug(
+                "Pushing static resource to container {:}{:}".format(
+                    self.container_id, container_path
+                )
+            )
+            docker_file_push(self.container_id, from_path, container_path)
+            # lxd.file_push(self.container_name, from_path, container_path)
+
+        if not problem.STATIC_RESOURCES:
+            logger.debug("No static resources to push")
 
         logger.info("Generating test cases...")
         test_cases = []
@@ -194,9 +217,15 @@ class SubmitResource():
                     dynamic_resources.append(destination_path)
 
                     container_path = "/root/{:}".format(dynamic_resource_filename)
-                    logger.debug("Pushing dynamic resource to container {:}{:}"
-                                 .format(self.container_name, container_path))
-                    lxd.file_push(self.container_name, resource_path, container_path)
+                    logger.debug(
+                        "Pushing dynamic resource to container {:}{:}".format(
+                            self.container_id, container_path
+                        )
+                    )
+                    # lxd.file_push(self.container_name, resource_path, container_path)
+                    docker_file_push(self.container_id, resource_path, container_path)
+            else:
+                logger.debug("No dynamic resources to push")
 
         runner = CodeRunner(language)
 
