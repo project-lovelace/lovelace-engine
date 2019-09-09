@@ -98,3 +98,32 @@ def docker_file_push(container_id, src_path, tgt_path, container_user="root", ch
         raise
 
     # TODO chown
+
+
+def docker_execute(container_id, cmd, timeout=60, env=None, client=None):
+    """Execute a command in a docker container"""
+
+    # TODO set a timeout here?
+
+    if not client:
+        client = docker.from_env()
+
+    try:
+        container = client.containers.get(container_id)
+    except docker.errors.NotFound:
+        logger.error("Container {} could not be found.".format(container_id))
+        raise
+
+    try:
+        exit_code, (std_out, std_err) = container.exec_run(
+            cmd, environment=env, workdir=None, demux=True
+        )
+    except docker.errors.APIError:
+        logger.error(
+            "Failed to run cmd {} in container {}. Exit code: {}; Stderr: {}".format(
+                cmd, container_id, exit_code, std_err
+            )
+        )
+        raise
+
+    return exit_code, std_out

@@ -9,7 +9,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 import engine.util as util
-from engine.docker_util import docker_file_push
+from engine.docker_util import docker_file_push, docker_execute
 
 # from .simple_lxd import simple_lxd as lxd
 
@@ -127,7 +127,8 @@ class CodeRunner(AbstractRunner):
         # Tell the Linux container to execute the run script that will run the user's code.
         runner_path = "/root/{}".format(runner_file)
         command = ["python3", runner_path]
-        _, exec_retval, exec_stdout = lxd.execute(container_id, command)
+
+        _, exec_retval, exec_stdout = docker_execute(container_id, command)
 
         # If running user code fails/crashes for whatever reason then declutter remaining files and raise an exception.
         if exec_retval != 0:
