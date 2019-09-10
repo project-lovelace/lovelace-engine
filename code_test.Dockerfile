@@ -1,12 +1,11 @@
 FROM python:3.7-slim
 
-WORKDIR /app
+WORKDIR /root
 
-COPY ./requirements.txt /app/requirements.txt
+COPY ./requirements.txt /root/requirements.txt
 
 # TODO: copy in permanent code run stuff?
 
-RUN pip install -r requirements.txt
 
 # TODO remove requirements.txt?
 
