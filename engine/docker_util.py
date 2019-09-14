@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+from subprocess import CalledProcessError
 
 import docker
 
@@ -92,12 +93,32 @@ def docker_file_push(container_id, src_path, tgt_path, container_user="root", ch
     logger.debug("Copying file into docker container: " + copy_msg)
 
     try:
-        _ = subprocess.run(cmd, check=True, encoding="utf8")
-    except subprocess.CalledProcessError:
+        ret = subprocess.run(cmd, check=True, stderr=subprocess.STDOUT, encoding="utf8")
+    except CalledProcessError as e:
         logger.error("Failed to copy file into container " + copy_msg)
+        logger.error("Process return code: {}; stdout: {}".format(e.returncode, e.stdout))
         raise
 
-    # TODO chown
+    # TODO chown?
+
+    return ret.stdout
+
+
+def docker_file_pull(container_id, src_path, tgt_path):
+    """Copy a file out of a docker container"""
+
+    cmd = ["docker", "cp", "{}:{}".format(container_id, src_path), tgt_path]
+    copy_msg = "{}: {} -> {}".format(container_id, src_path, tgt_path)
+    logger.debug("Copying file out of docker container: " + copy_msg)
+
+    try:
+        ret = subprocess.run(cmd, check=True, stderr=subprocess.STDOUT, encoding="utf8")
+    except CalledProcessError as e:
+        logger.error("Failed to copy file out of container " + copy_msg)
+        logger.error("Process return code: {}; stdout: {}".format(e.returncode, e.stdout))
+        raise
+
+    return ret.stdout
 
 
 def docker_execute(container_id, cmd, timeout=60, env=None, client=None):
@@ -114,16 +135,16 @@ def docker_execute(container_id, cmd, timeout=60, env=None, client=None):
         logger.error("Container {} could not be found.".format(container_id))
         raise
 
+    logger.debug("Running command {} in container {}.".format(cmd, container_id))
+
     try:
-        exit_code, (std_out, std_err) = container.exec_run(
-            cmd, environment=env, workdir=None, demux=True
-        )
+        exit_code, std_out = container.exec_run(cmd, environment=env, workdir=None)
     except docker.errors.APIError:
         logger.error(
-            "Failed to run cmd {} in container {}. Exit code: {}; Stderr: {}".format(
-                cmd, container_id, exit_code, std_err
+            "Failed to run cmd {} in container {}. Exit code: {}; Stdout: {}".format(
+                cmd, container_id, exit_code, std_out.decode("utf8")
             )
         )
         raise
 
-    return exit_code, std_out
+    return exit_code, std_out.decode("utf8")
