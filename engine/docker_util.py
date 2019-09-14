@@ -29,7 +29,7 @@ def docker_init(client=None, image_name="lovelace-code-test"):
 
     try:
         image, logs = client.images.build(
-            path=docker_dir, dockerfile="code_test.Dockerfile", tag="lovelace-code-test"
+            path=docker_dir, dockerfile="code_runner.Dockerfile", tag="lovelace-code-test"
         )
     except (docker.errors.BuildError, docker.errors.APIError):
         logger.error(
