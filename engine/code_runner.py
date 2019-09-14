@@ -4,14 +4,15 @@ import logging
 import pickle
 import shutil
 import subprocess
+from subprocess import CalledProcessError
 from abc import ABCMeta, abstractmethod
 
+import docker
 import numpy as np
 
 import engine.util as util
-from engine.docker_util import docker_file_push, docker_execute
+from engine.docker_util import docker_file_push, docker_file_pull, docker_execute
 
-# from .simple_lxd import simple_lxd as lxd
 
 logger = logging.getLogger(__name__)
 
@@ -108,29 +109,29 @@ class CodeRunner(AbstractRunner):
             source_path = file_name
             target_path = "/root/{:s}".format(file_name)
 
-            # _, push_retval, push_stdout = lxd.file_push(container_id, source_path, target_path)
-
             try:
-                docker_file_push(container_id, source_path, target_path)
+                push_stdout = docker_file_push(container_id, source_path, target_path)
             except subprocess.CalledProcessError:
                 # If pushing a file fails then declutter remaining files and raise an exception.
                 for fn in required_files:
                     util.delete_file(fn)
-                raise FilePushError
-
-            # # If pushing a file fails then declutter remaining files and raise an exception.
-            # if push_retval != 0:
-            #     for fn in required_files:
-            #         util.delete_file(fn)
-            #     raise FilePushError(push_stdout)
+                # TODO: push_stdout might not be set here, if the push process really fails
+                raise FilePushError(push_stdout)
 
         # Tell the Linux container to execute the run script that will run the user's code.
         runner_path = "/root/{}".format(runner_file)
         command = ["python3", runner_path]
 
-        _, exec_retval, exec_stdout = docker_execute(container_id, command)
+        logger.debug("Trying to execute function in docker...")
+        try:
+            exec_retval, exec_stdout = docker_execute(container_id, command)
+        except docker.errors.APIError:
+            # If we fail to connect through docker, clean up the files
+            for fn in required_files:
+                util.delete_file(fn)
+            raise EngineExecutionError(exec_stdout)
 
-        # If running user code fails/crashes for whatever reason then declutter remaining files and raise an exception.
+        # Or if the code failed to run properly, clean up the files
         if exec_retval != 0:
             for fn in required_files:
                 util.delete_file(fn)
@@ -146,10 +147,9 @@ class CodeRunner(AbstractRunner):
             source_path = "/root/{:s}".format(output_pickle)
             target_path = output_pickle
 
-            _, pull_retval, pull_stdout = lxd.file_pull(container_id, source_path, target_path)
-
-            # If pulling a file fails then declutter remaining files and raise an exception.
-            if pull_retval != 0:
+            try:
+                pull_stdout = docker_file_pull(container_id, source_path, target_path)
+            except CalledProcessError:
                 for fn in required_files:
                     util.delete_file(fn)
                 raise FilePullError(pull_stdout)
@@ -157,6 +157,7 @@ class CodeRunner(AbstractRunner):
             with open(output_pickle, mode="rb") as f:
                 output_dict = pickle.load(f)
 
+            # TODO: exec_retval will always be zero here, so why return it?
             p_info = {
                 "return_value": exec_retval,
                 "stdout": exec_stdout,

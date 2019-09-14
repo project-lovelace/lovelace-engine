@@ -14,11 +14,11 @@ import falcon
 
 import engine.util as util
 
-# from .simple_lxd import simple_lxd as lxd
 from engine.code_runner import CodeRunner, FilePushError, FilePullError, EngineExecutionError
 from engine.docker_util import (
     docker_init,
     docker_file_push,
+    docker_file_pull,
     create_docker_container,
     remove_docker_container,
 )
@@ -116,8 +116,7 @@ class SubmitResource:
                     self.container_id, container_path
                 )
             )
-            docker_file_push(self.container_id, from_path, container_path)
-            # lxd.file_push(self.container_name, from_path, container_path)
+            _ = docker_file_push(self.container_id, from_path, container_path)
 
         if not problem.STATIC_RESOURCES:
             logger.debug("No static resources to push")
@@ -168,22 +167,21 @@ class SubmitResource:
                             self.container_id, container_path
                         )
                     )
-                    # lxd.file_push(self.container_name, resource_path, container_path)
-                    docker_file_push(self.container_id, resource_path, container_path)
-            else:
-                logger.debug("No dynamic resources to push")
+                    _ = docker_file_push(self.container_id, resource_path, container_path)
+
+        if not dynamic_resources:
+            logger.debug("No dynamic resources to push")
 
         runner = CodeRunner(language)
 
+        input_tuples = [tc.input_tuple() for tc in test_cases]
+        output_tuples = [tc.output_tuple() for tc in test_cases]
         try:
-            input_tuples = [tc.input_tuple() for tc in test_cases]
-            output_tuples = [tc.output_tuple() for tc in test_cases]
             user_outputs, p_infos = runner.run(
                 self.container_name, code_filename, function_name, input_tuples, output_tuples
             )
-
         except (FilePushError, FilePullError):
-            explanation = "File could not be pushed to or pulled from LXD container. Returning falcon HTTP 500."
+            explanation = "File could not be pushed to or pulled from docker container. Returning falcon HTTP 500."
             add_error_to_response(
                 resp, explanation, traceback.format_exc(), falcon.HTTP_500, code_filename
             )
@@ -191,7 +189,7 @@ class SubmitResource:
 
         except EngineExecutionError:
             explanation = (
-                "Return code from executing user code in LXD container is nonzero. "
+                "Return code from executing user code in docker container is nonzero. "
                 "Returning falcon HTTP 400."
             )
             add_error_to_response(
@@ -200,6 +198,7 @@ class SubmitResource:
             return
 
         # Pull any user generated files.
+        files_pulled = False
         for i, tc in enumerate(test_cases):
             if "USER_GENERATED_FILES" in tc.output:
                 for user_generated_filename in tc.output["USER_GENERATED_FILES"]:
@@ -211,7 +210,13 @@ class SubmitResource:
                         )
                     )
 
-                    lxd.file_pull(self.container_name, container_filepath, user_generated_filename)
+                    _ = docker_file_pull(
+                        self.container_id, container_filepath, user_generated_filename
+                    )
+                    files_pulled = True
+
+        if not files_pulled:
+            logger.debug("No user generated files to pull")
 
         n_cases = len(test_cases)
         n_passes = 0  # Number of test cases passed.
