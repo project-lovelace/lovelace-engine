@@ -8,32 +8,20 @@ import unittest
 
 import pytest
 
-# User can set solutions dir and server/port for lovelace engine if it's different from
-# the default. Don't forget http:// at the beginning of the engine URI
-ENGINE_URI = os.environ.get("LOVELACE_ENGINE_URI", "http://localhost:14714")
-SOLUTIONS_DIR = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
-print("SOLUTIONS_DIR: ", SOLUTIONS_DIR)
-print("ENGINE_URI: ", ENGINE_URI)
-
-
-def test_environment_solutions_dir():
-    assert os.path.isdir(SOLUTIONS_DIR) is True
-
-
-def test_environment_engine_uri():
-    resp = requests.get(ENGINE_URI)
-    assert resp.ok is True
-
 
 class TestApi(unittest.TestCase):
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_solutions_dirs(self, solutions_dir):
+        self.python_solutions_dir = os.path.join(solutions_dir, "python")
+        self.javascript_solutions_dir = os.path.join(solutions_dir, "javascript")
+        self.julia_solutions_dir = os.path.join(solutions_dir, "julia")
+        self.c_solutions_dir = os.path.join(solutions_dir, "c")
 
-    python_solutions_dir = os.path.join(SOLUTIONS_DIR, "python")
-    javascript_solutions_dir = os.path.join(SOLUTIONS_DIR, "javascript")
-    julia_solutions_dir = os.path.join(SOLUTIONS_DIR, "julia")
-    c_solutions_dir = os.path.join(SOLUTIONS_DIR, "c")
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_engine_uri(self, engine_uri):
+        self.engine_uri = engine_uri
 
-    @staticmethod
-    def submit_solution(file_path):
+    def submit_solution(self, file_path):
         with open(file_path, "r") as solution_file:
             code = solution_file.read()
         code_b64 = base64.b64encode(code.encode("utf-8")).decode("utf-8")
@@ -44,7 +32,7 @@ class TestApi(unittest.TestCase):
         payload_dict = {"problem": problem_name, "language": language, "code": code_b64}
         payload_json = json.dumps(payload_dict)
 
-        response = requests.post(ENGINE_URI + "/submit", data=payload_json)
+        response = requests.post(self.engine_uri + "/submit", data=payload_json)
         response_data = json.loads(response.text)
 
         return response_data
