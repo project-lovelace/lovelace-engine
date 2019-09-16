@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 
 import pytest
@@ -48,3 +50,24 @@ def language_solutions_dir(solutions_dir):
         return os.path.join(solutions_dir, language)
 
     return language_solutions_dir
+
+
+@pytest.fixture
+def submit_solution():
+    def submit_solution_helper(file_path, engine_submit_uri):
+        with open(file_path, "r") as solution_file:
+            code = solution_file.read()
+        code_b64 = base64.b64encode(code.encode("utf-8")).decode("utf-8")
+
+        problem_name, extension = os.path.basename(file_path).split(sep=".")
+        language = {"py": "python", "js": "javascript", "jl": "julia", "c": "c"}.get(extension)
+
+        payload_dict = {"problem": problem_name, "language": language, "code": code_b64}
+        payload_json = json.dumps(payload_dict)
+
+        response = requests.post(engine_submit_uri, data=payload_json)
+        response_data = json.loads(response.text)
+
+        return response_data
+
+    return submit_solution_helper
