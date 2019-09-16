@@ -7,6 +7,15 @@ import requests
 import unittest
 
 
+def test_environment_solutions_dir():
+    assert os.path.isdir(SOLUTIONS_DIR) is True
+
+
+def test_environment_engine_uri():
+    resp = requests.get(ENGINE_URI)
+    assert resp.ok is True
+
+
 class TestApi(unittest.TestCase):
     solutions_dir = "/home/ada/lovelace/lovelace-solutions/"
     python_solutions_dir = os.path.join(solutions_dir, "python")
