@@ -6,7 +6,6 @@ import base64
 import requests
 import unittest
 
-import pytest
 
 # User can set solutions dir and server/port for lovelace engine if it's different from
 # the default. Don't forget http:// at the beginning of the engine URI
@@ -14,6 +13,15 @@ ENGINE_URI = os.environ.get("LOVELACE_ENGINE_URI", "http://localhost:14714")
 SOLUTIONS_DIR = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
 print("SOLUTIONS_DIR: ", SOLUTIONS_DIR)
 print("ENGINE_URI: ", ENGINE_URI)
+
+
+def test_environment_solutions_dir():
+    assert os.path.isdir(SOLUTIONS_DIR) is True
+
+
+def test_environment_engine_uri():
+    resp = requests.get(ENGINE_URI)
+    assert resp.ok is True
 
 
 class TestApi(unittest.TestCase):
@@ -40,7 +48,6 @@ class TestApi(unittest.TestCase):
 
         return response_data
 
-    @pytest.mark.python
     def test_all_problems_python_success(self):
         solution_files = glob.glob(os.path.join(self.python_solutions_dir, "*.py"))
         if not solution_files:
@@ -62,7 +69,6 @@ class TestApi(unittest.TestCase):
                 "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)),
             )
 
-    @pytest.mark.javascript
     def test_all_problems_javascript_success(self):
         solution_files = glob.glob(os.path.join(self.javascript_solutions_dir, "*.js"))
         if not solution_files:
@@ -84,7 +90,6 @@ class TestApi(unittest.TestCase):
                 "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)),
             )
 
-    @pytest.mark.julia
     def test_all_problems_julia_success(self):
 
         solution_files = glob.glob(os.path.join(self.julia_solutions_dir, "*.jl"))
@@ -107,7 +112,6 @@ class TestApi(unittest.TestCase):
                 "Failed. Engine output:\n{:}".format(json.dumps(result, indent=4)),
             )
 
-    @pytest.mark.c
     def test_all_problems_c_success(self):
 
         solution_files = glob.glob(os.path.join(self.c_solutions_dir, "*.c"))
