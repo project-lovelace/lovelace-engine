@@ -46,10 +46,10 @@ def solutions_dir():
 
 @pytest.fixture()
 def language_solutions_dir(solutions_dir):
-    def language_solutions_dir(language):
+    def language_solutions_dir_helper(language):
         return os.path.join(solutions_dir, language)
 
-    return language_solutions_dir
+    return language_solutions_dir_helper
 
 
 @pytest.fixture
