@@ -44,7 +44,7 @@ class TestApi:
             t2 = time.perf_counter()
             print("{:.6f} seconds.".format(t2 - t1))
 
-            assert result["success"] is True, "Failed. Engine output:\n{:}".format(
+            assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
                 json.dumps(result, indent=4)
             )
 
@@ -66,7 +66,7 @@ class TestApi:
             t2 = time.perf_counter()
             print("{:.6f} seconds.".format(t2 - t1))
 
-            assert result["success"] is True, "Failed. Engine output:\n{:}".format(
+            assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
                 json.dumps(result, indent=4)
             )
 
@@ -89,7 +89,7 @@ class TestApi:
             t2 = time.perf_counter()
             print("{:.6f} seconds.".format(t2 - t1))
 
-            assert result["success"] is True, "Failed. Engine output:\n{:}".format(
+            assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
                 json.dumps(result, indent=4)
             )
 
@@ -110,6 +110,6 @@ class TestApi:
             t2 = time.perf_counter()
             print("{:.6f} seconds.".format(t2 - t1))
 
-            assert result["success"] is True, "Failed. Engine output:\n{:}".format(
+            assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
                 json.dumps(result, indent=4)
             )
