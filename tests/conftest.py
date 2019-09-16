@@ -26,6 +26,11 @@ def engine_uri():
     return uri
 
 
+@pytest.fixture()
+def engine_submit_uri(engine_uri):
+    return engine_uri + "/submit"
+
+
 @pytest.fixture(scope="session")
 def solutions_dir():
     sol_dir = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
@@ -35,3 +40,11 @@ def solutions_dir():
             "Is the env var LOVELACE_SOLUTIONS_DIR set properly?".format(sol_dir)
         )
     return sol_dir
+
+
+@pytest.fixture()
+def language_solutions_dir(solutions_dir):
+    def language_solutions_dir(language):
+        return os.path.join(solutions_dir, language)
+
+    return language_solutions_dir
