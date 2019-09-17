@@ -27,25 +27,6 @@ def engine_submit_uri(engine_uri):
     return engine_uri + "/submit"
 
 
-# @pytest.fixture(scope="session")
-# def solutions_dir():
-#     sol_dir = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
-#     if not os.path.isdir(sol_dir):
-#         raise ValueError(
-#             "Cannot find solutions dir at: {}. "
-#             "Is the env var LOVELACE_SOLUTIONS_DIR set properly?".format(sol_dir)
-#         )
-#     return sol_dir
-
-
-# @pytest.fixture()
-# def language_solutions_dir(solutions_dir):
-#     def _language_solutions_dir(language):
-#         return os.path.join(solutions_dir, language)
-
-#     return _language_solutions_dir
-
-
 @pytest.fixture
 def submit_solution():
     def _submit_solution(file_path, engine_submit_uri):
