@@ -6,12 +6,6 @@ import pytest
 import requests
 
 
-# User can set solutions dir and server/port for lovelace engine if it's different from
-# the default. Don't forget http:// at the beginning of the engine URI
-# export LOVELACE_ENGINE_URI="https://custom-url:12345"
-# export LOVELACE_SOLUTIONS_DIR="/home/myuser/lovelace/solutions"
-
-
 @pytest.fixture(scope="session")
 def engine_uri():
     uri = os.environ.get("LOVELACE_ENGINE_URI", "http://localhost:14714")
@@ -33,28 +27,28 @@ def engine_submit_uri(engine_uri):
     return engine_uri + "/submit"
 
 
-@pytest.fixture(scope="session")
-def solutions_dir():
-    sol_dir = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
-    if not os.path.isdir(sol_dir):
-        raise ValueError(
-            "Cannot find solutions dir at: {}. "
-            "Is the env var LOVELACE_SOLUTIONS_DIR set properly?".format(sol_dir)
-        )
-    return sol_dir
+# @pytest.fixture(scope="session")
+# def solutions_dir():
+#     sol_dir = os.environ.get("LOVELACE_SOLUTIONS_DIR", "/home/ada/lovelace/lovelace-solutions/")
+#     if not os.path.isdir(sol_dir):
+#         raise ValueError(
+#             "Cannot find solutions dir at: {}. "
+#             "Is the env var LOVELACE_SOLUTIONS_DIR set properly?".format(sol_dir)
+#         )
+#     return sol_dir
 
 
-@pytest.fixture()
-def language_solutions_dir(solutions_dir):
-    def language_solutions_dir_helper(language):
-        return os.path.join(solutions_dir, language)
+# @pytest.fixture()
+# def language_solutions_dir(solutions_dir):
+#     def _language_solutions_dir(language):
+#         return os.path.join(solutions_dir, language)
 
-    return language_solutions_dir_helper
+#     return _language_solutions_dir
 
 
 @pytest.fixture
 def submit_solution():
-    def submit_solution_helper(file_path, engine_submit_uri):
+    def _submit_solution(file_path, engine_submit_uri):
         with open(file_path, "r") as solution_file:
             code = solution_file.read()
         code_b64 = base64.b64encode(code.encode("utf-8")).decode("utf-8")
@@ -70,4 +64,4 @@ def submit_solution():
 
         return response_data
 
-    return submit_solution_helper
+    return _submit_solution
