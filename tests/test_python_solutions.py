@@ -22,8 +22,8 @@ def test_solutions_exist():
 # TODO ids. id function to turn file name into cleaner label
 @pytest.mark.python
 @pytest.mark.parametrize("solution_file", solution_files)
-def test_submit_file(solution_file, engine_submit_uri, submit_solution):
-    result = submit_solution(solution_file, engine_submit_uri)
+def test_submit_file(solution_file, submit_solution):
+    result = submit_solution(solution_file)
 
     assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
         json.dumps(result, indent=4)

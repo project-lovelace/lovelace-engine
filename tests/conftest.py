@@ -27,9 +27,9 @@ def engine_submit_uri(engine_uri):
     return engine_uri + "/submit"
 
 
-@pytest.fixture
-def submit_solution():
-    def _submit_solution(file_path, engine_submit_uri):
+@pytest.fixture()
+def submit_solution(engine_submit_uri):
+    def _submit_solution(file_path):
         with open(file_path, "r") as solution_file:
             code = solution_file.read()
         code_b64 = base64.b64encode(code.encode("utf-8")).decode("utf-8")
