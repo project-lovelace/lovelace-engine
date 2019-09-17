@@ -37,6 +37,9 @@ def submit_solution(engine_submit_uri):
         problem_name, extension = os.path.basename(file_path).split(sep=".")
         language = {"py": "python", "js": "javascript", "jl": "julia", "c": "c"}.get(extension)
 
+        if not language:
+            raise ValueError("Solution file has unrecognized extension: {}".format(file_path))
+
         payload_dict = {"problem": problem_name, "language": language, "code": code_b64}
         payload_json = json.dumps(payload_dict)
 
