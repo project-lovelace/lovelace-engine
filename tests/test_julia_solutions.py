@@ -9,11 +9,11 @@ from helpers import solutions_dir
 
 # NOTE: If we make solution_files a fixture instead of a normal attr/function,
 # then we can't use it in pytest's parametrize
-solution_files = glob.glob(os.path.join(solutions_dir("python"), "*.py"))
+solution_files = glob.glob(os.path.join(solutions_dir("julia"), "*.jl"))
 
 
-@pytest.mark.python
-def test_solutions_exist():
+@pytest.mark.julia
+def test_julia_solutions_exist():
     assert solution_files
 
 
@@ -22,7 +22,7 @@ def id_func(param):
     return problem_name
 
 
-@pytest.mark.python
+@pytest.mark.julia
 @pytest.mark.parametrize("solution_file", solution_files, ids=id_func)
 def test_submit_file(solution_file, submit_solution):
     result = submit_solution(solution_file)
