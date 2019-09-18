@@ -13,7 +13,7 @@ solution_files = glob.glob(os.path.join(solutions_dir("python"), "*.py"))
 
 
 @pytest.mark.python
-def test_solutions_exist():
+def test_python_solutions_exist():
     assert solution_files
 
 
