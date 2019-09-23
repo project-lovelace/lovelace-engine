@@ -31,7 +31,9 @@ stop-engine:
 test:
 	@echo "Make sure the engine is running!"
 	@echo "Running tests..."
-	cd engine ; $(PYTHON37) -m unittest test_api.py
+	@echo "Note: if using non-default paths, set the env variable LOVELACE_SOLUTIONS_DIR"
+	@echo "Note: if using non-default engine URL and port, set the env var LOVELACE_ENGINER_URI"
+	cd tests ; pytest
 
 clean:
 	@echo "Deleting old virtual environment..."
