@@ -1,18 +1,14 @@
-import fileinput
 import json
-import logging
 import pickle
 import shutil
-import subprocess
-from subprocess import CalledProcessError
+import logging
+import fileinput
 from abc import ABCMeta, abstractmethod
 
-import docker
 import numpy as np
 
 import engine.util as util
-from engine.docker_util import docker_file_push, docker_file_pull, docker_execute
-
+from .simple_lxd import simple_lxd as lxd
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +61,9 @@ class CodeRunner(AbstractRunner):
         else:
             raise ValueError("CodeRunner does not support language={:}".format(language))
 
-    def run(self, container_id, code_filename, function_name, input_tuples, correct_output_tuples):
+    def run(
+        self, container_name, code_filename, function_name, input_tuples, correct_output_tuples
+    ):
         logger.info("Running {:s} with {:d} inputs...".format(code_filename, len(input_tuples)))
 
         run_id = code_filename.split(".")[0]
@@ -108,30 +106,20 @@ class CodeRunner(AbstractRunner):
         for file_name in required_files + self.util_files:
             source_path = file_name
             target_path = "/root/{:s}".format(file_name)
+            _, push_retval, push_stdout = lxd.file_push(container_name, source_path, target_path)
 
-            try:
-                push_stdout = docker_file_push(container_id, source_path, target_path)
-            except subprocess.CalledProcessError:
-                # If pushing a file fails then declutter remaining files and raise an exception.
+            # If pushing a file fails then declutter remaining files and raise an exception.
+            if push_retval != 0:
                 for fn in required_files:
                     util.delete_file(fn)
-                # TODO: push_stdout might not be set here, if the push process really fails
                 raise FilePushError(push_stdout)
 
         # Tell the Linux container to execute the run script that will run the user's code.
         runner_path = "/root/{}".format(runner_file)
         command = ["python3", runner_path]
+        _, exec_retval, exec_stdout = lxd.execute(container_name, command)
 
-        logger.debug("Trying to execute function in docker...")
-        try:
-            exec_retval, exec_stdout = docker_execute(container_id, command)
-        except docker.errors.APIError:
-            # If we fail to connect through docker, clean up the files
-            for fn in required_files:
-                util.delete_file(fn)
-            raise EngineExecutionError(exec_stdout)
-
-        # Or if the code failed to run properly, clean up the files
+        # If running user code fails/crashes for whatever reason then declutter remaining files and raise an exception.
         if exec_retval != 0:
             for fn in required_files:
                 util.delete_file(fn)
@@ -147,9 +135,10 @@ class CodeRunner(AbstractRunner):
             source_path = "/root/{:s}".format(output_pickle)
             target_path = output_pickle
 
-            try:
-                pull_stdout = docker_file_pull(container_id, source_path, target_path)
-            except CalledProcessError:
+            _, pull_retval, pull_stdout = lxd.file_pull(container_name, source_path, target_path)
+
+            # If pulling a file fails then declutter remaining files and raise an exception.
+            if pull_retval != 0:
                 for fn in required_files:
                     util.delete_file(fn)
                 raise FilePullError(pull_stdout)
@@ -157,7 +146,6 @@ class CodeRunner(AbstractRunner):
             with open(output_pickle, mode="rb") as f:
                 output_dict = pickle.load(f)
 
-            # TODO: exec_retval will always be zero here, so why return it?
             p_info = {
                 "return_value": exec_retval,
                 "stdout": exec_stdout,
