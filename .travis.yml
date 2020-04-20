@@ -15,6 +15,9 @@ before_install:
   - git clone https://github.com/project-lovelace/lovelace-solutions.git
   - ln -s lovelace-solutions/python/ solutions
 
+env:
+  - LOVELACE_SOLUTIONS_DIR=./solutions/
+
 install:
   - pip install -r requirements.txt
 
