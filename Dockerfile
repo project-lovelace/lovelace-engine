@@ -25,4 +25,7 @@ RUN ["ln", "-s", "/lovelace-solutions/python/", "solutions"]
 RUN ["ln", "-s", "/lovelace-solutions/python/", "/lovelace-problems/problems/solutions"]
 
 EXPOSE 14714
-CMD ["gunicorn", "--workers", "1", "--log-level", "debug", "--timeout", "600", "--preload", "--reload", "--bind", "0.0.0.0:14714", "engine.api:app"]
+
+# https://pythonspeed.com/articles/gunicorn-in-docker/
+# https://docs.gunicorn.org/en/stable/faq.html#how-do-i-avoid-gunicorn-excessively-blocking-in-os-fchmod
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "--workers", "1", "--log-level", "debug", "--timeout", "600", "--preload", "--reload", "--bind", "0.0.0.0:14714", "engine.api:app"]
