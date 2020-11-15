@@ -20,8 +20,5 @@ RUN apt-get update &&\
   pip install -r requirements.txt &&\
   rm requirements.txt
 
-
-# ENTRYPOINT ["bash"]
-
-
 CMD ["tail", "-f", "/dev/null"]
+
