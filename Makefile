@@ -8,8 +8,8 @@ ENGINE_PORT := 14714
 # GUNICORN := /root/anaconda3/envs/lovelace_engine_env/bin/gunicorn
 
 # Development VM
-PYTHON37 := /usr/local/bin/python3
-GUNICORN := /usr/local/bin/gunicorn
+PYTHON37 := python3
+GUNICORN := gunicorn
 
 prepare-venv: clean
 	@echo "Preparing virtual environment..."
@@ -20,7 +20,7 @@ update-requirements:
 
 start-engine: stop-engine
 	@echo "Starting the Lovelace Engine in the foreground..."
-	$(PYTHON37) $(GUNICORN) --workers 1 --log-level debug --timeout 600 --preload --reload --bind localhost:$(ENGINE_PORT) engine.api:app
+	$(GUNICORN) --workers 1 --log-level debug --timeout 600 --preload --reload --bind localhost:$(ENGINE_PORT) engine.api:app
 
 stop-engine:
 	@echo "Stopping the Lovelace Engine gracefully..."

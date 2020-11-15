@@ -99,5 +99,6 @@ resources
 # IDE files
 .idea
 
-# Symlink to the solutions repo
+# Symlinks
+lovelace-solutions
 solutions
