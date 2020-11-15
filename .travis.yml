@@ -22,4 +22,5 @@ install:
   - pip install -r requirements.txt
 
 script:
+  - sleep 60
   - pytest
