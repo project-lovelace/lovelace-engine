@@ -3,8 +3,6 @@ import time
 import hashlib
 import logging
 
-from .simple_lxd import simple_lxd as lxd
-
 logger = logging.getLogger(__name__)
 
 
@@ -62,21 +60,3 @@ def delete_file(filename):
     if os.path.isfile(filename):
         logger.debug("Deleting file: {:s}".format(filename))
         os.remove(filename)
-
-
-def configure_lxd() -> None:
-    logger.debug("Configuring Linux container profile...")
-    ll_profile = "lovelace"
-    lxd.profile_delete(ll_profile)
-    lxd.profile_copy("default", ll_profile)
-    lxd.profile_set(ll_profile, "limits.cpu", "1")
-    lxd.profile_set(ll_profile, "limits.cpu.allowance", "100%")
-    lxd.profile_set(ll_profile, "limits.cpu.priority", "5")
-    lxd.profile_set(ll_profile, "limits.disk.priority", "5")
-    lxd.profile_set(ll_profile, "limits.memory", "750MB")
-    lxd.profile_set(ll_profile, "limits.memory.enforce", "hard")
-    lxd.profile_set(ll_profile, "limits.memory.swap", "false")
-    lxd.profile_set(ll_profile, "limits.processes", "200")
-    lxd.profile_set(ll_profile, "security.nesting", "false")
-    lxd.profile_set(ll_profile, "security.privileged", "false")
-    # lxd.profile_device_remove(ll_profile, "eth0")
