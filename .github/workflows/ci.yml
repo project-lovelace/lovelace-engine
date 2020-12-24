@@ -58,5 +58,5 @@ jobs:
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
       - name: Push to DockerHub
         run: |
-          docker tag lovelace-engine projectlovelace/lovelace-engine:latest
+          docker tag lovelace-engine projectlovelace/lovelace-engine
           docker push projectlovelace/lovelace-engine
