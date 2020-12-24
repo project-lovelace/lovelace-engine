@@ -16,7 +16,7 @@ RUN pip install --upgrade pip &&\
     pip install -r requirements.txt
 
 ENV PATH="/root/julia/bin:${PATH}"
-RUN curl -OJ https://julialang-s3.julialang.org/bin/linux/x64/1.5/julia-1.5.3-linux-x86_64.tar.gz &&\
+RUN curl -OJ "https://julialang-s3.julialang.org/bin/linux/x64/1.5/julia-1.5.3-linux-x86_64.tar.gz" &&\
     mkdir julia &&\
     tar xf julia-1.5.3-linux-x86_64.tar.gz -C julia --strip-components 1 &&\
     rm -rf julia-1.5.3-linux-x86_64.tar.gz &&\
