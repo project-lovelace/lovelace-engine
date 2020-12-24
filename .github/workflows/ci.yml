@@ -26,6 +26,8 @@ jobs:
 
       - name: Build Docker container
         run: docker build -t lovelace-engine .
+        env:
+          LOVELACE_GITHUB_TOKEN: ${{ secrets.LOVELACE_GITHUB_TOKEN }}
 
       - name: Run Docker container
         run: |
