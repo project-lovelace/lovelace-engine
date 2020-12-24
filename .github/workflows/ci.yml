@@ -41,7 +41,7 @@ jobs:
           ln -s lovelace-solutions/python/ solutions
 
       - name: Wait for Docker container to spin up
-        run: sleep 300
+        run: sleep 600
 
       - name: Run tests
         run: pytest
