@@ -1,0 +1,46 @@
+name: lovelace-engine CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build Docker container
+        run: docker build -t lovelace-engine .
+
+      - name: Run Docker container
+        run: |
+          docker run -d -v /var/run/docker.sock:/var/run/docker.sock -p 14714:14714 lovelace-engine
+          docker ps -a
+
+      - name: Clone lovelace-solutions
+        run: |
+          git clone https://github.com/project-lovelace/lovelace-solutions.git
+          ln -s lovelace-solutions/python/ solutions
+
+      - name: Wait for Docker container to spin up
+        run: sleep 300
+
+      - name: Run tests
+        run: pytest
+        env:
+          LOVELACE_SOLUTIONS_DIR: ./lovelace-solutions/
