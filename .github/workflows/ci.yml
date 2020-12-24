@@ -51,7 +51,7 @@ jobs:
   deploy:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    needs: test
+    # needs: test
     # if: github.ref == 'refs/heads/master'
     steps:
       - name: Log in to DockerHub
