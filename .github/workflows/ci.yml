@@ -56,6 +56,8 @@ jobs:
     steps:
       - name: Log in to DockerHub
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: docker images
+        run: docker images
       - name: Push to DockerHub
         run: |
           docker tag lovelace-engine projectlovelace/lovelace-engine
