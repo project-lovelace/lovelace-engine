@@ -43,9 +43,6 @@ jobs:
           git clone https://${{ secrets.LOVELACE_GITHUB_TOKEN }}@github.com/project-lovelace/lovelace-solutions.git
           ln -s lovelace-solutions/python/ solutions
 
-      - name: Wait for Docker container to spin up
-        run: sleep 300
-
       - name: Run tests
         run: pytest
         env:
