@@ -22,7 +22,7 @@ RUN git clone https://github.com/project-lovelace/lovelace-problems.git /lovelac
 RUN ln -s /lovelace-problems/problems/ problems
 RUN ln -s /lovelace-problems/resources/ resources
 
-RUN git clone https://$LOVELACE_GITHUB_TOKEN:@github.com/project-lovelace/lovelace-solutions.git /lovelace-solutions/
+RUN --mount=type=secret,id=token git clone https://`cat /run/secrets/token`@github.com/project-lovelace/lovelace-solutions.git /lovelace-solutions/
 RUN ln -s /lovelace-solutions/python/ solutions
 RUN ln -s /lovelace-solutions/python/ /lovelace-problems/problems/solutions
 

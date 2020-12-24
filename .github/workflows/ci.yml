@@ -24,10 +24,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+        # We need BuildKit to use secrets: https://docs.docker.com/develop/develop-images/build_enhancements/#to-enable-buildkit-builds
       - name: Build Docker container
-        run: docker build -t lovelace-engine .
-        env:
-          LOVELACE_GITHUB_TOKEN: ${{ secrets.LOVELACE_GITHUB_TOKEN }}
+        run: |
+          echo ${{ secrets.LOVELACE_GITHUB_TOKEN }} > token.txt
+          DOCKER_BUILDKIT=1 docker build -t lovelace-engine --secret id=token,src=token.txt .
 
       - name: Run Docker container
         run: |
