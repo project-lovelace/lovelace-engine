@@ -102,3 +102,7 @@ resources
 # Symlinks
 lovelace-solutions
 solutions
+
+# Secrets
+token.txt
+
