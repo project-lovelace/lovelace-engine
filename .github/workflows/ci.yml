@@ -47,7 +47,7 @@ jobs:
         run: sleep 300
 
       - name: Run tests
-        run: pytest
+        run: pytest --capture=no --verbose
         env:
           LOVELACE_SOLUTIONS_DIR: ./lovelace-solutions/
 
