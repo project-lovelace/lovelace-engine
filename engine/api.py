@@ -252,6 +252,9 @@ class SubmitResource:
             test_case_details.append(
                 {
                     "testCaseType": tc.test_type.test_name,
+                    "input": input_tuple,
+                    "output": user_output,
+                    "expected": expected_output,
                     "inputString": str(input_tuple),
                     "outputString": str(user_output),
                     "expectedString": str(expected_output),
