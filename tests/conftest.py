@@ -44,6 +44,7 @@ def submit_solution(engine_submit_uri):
         payload_json = json.dumps(payload_dict)
 
         response = requests.post(engine_submit_uri, data=payload_json)
+        print(response.text)
         response_data = json.loads(response.text)
 
         return response_data
