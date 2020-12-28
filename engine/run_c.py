@@ -158,6 +158,8 @@ def ctype_output(var):
         return var.value
     elif isinstance(var, bytes):
         return var.decode("utf-8")
+    elif isinstance(var, ndarray):
+        return var.tolist()
     else:
         return var
 
