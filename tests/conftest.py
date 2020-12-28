@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import time
 
 import pytest
 import requests
@@ -43,9 +44,11 @@ def submit_solution(engine_submit_uri):
         payload_dict = {"problem": problem_name, "language": language, "code": code_b64}
         payload_json = json.dumps(payload_dict)
 
+        t1 = time.perf_counter()
         response = requests.post(engine_submit_uri, data=payload_json)
-        response_data = json.loads(response.text)
+        t2 = time.perf_counter()
+        print(f"{t2 - t1 : .6f} seconds ", end='')
 
-        return response_data
+        return response.json()
 
     return _submit_solution

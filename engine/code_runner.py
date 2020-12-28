@@ -115,8 +115,7 @@ class CodeRunner(AbstractRunner):
                 # If pushing a file fails then declutter remaining files and raise an exception.
                 for fn in required_files:
                     util.delete_file(fn)
-                # TODO: push_stdout might not be set here, if the push process really fails
-                raise FilePushError(push_stdout)
+                raise FilePushError()
 
         # Tell the Linux container to execute the run script that will run the user's code.
         runner_path = "/root/{}".format(runner_file)
