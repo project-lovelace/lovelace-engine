@@ -30,4 +30,4 @@ EXPOSE 14714
 
 # https://pythonspeed.com/articles/gunicorn-in-docker/
 # https://docs.gunicorn.org/en/stable/faq.html#how-do-i-avoid-gunicorn-excessively-blocking-in-os-fchmod
-CMD gunicorn --worker-tmp-dir /dev/shm --workers 2 --log-level debug --timeout 600 --preload --reload --bind 0.0.0.0:14714 engine.api:app
+CMD gunicorn --worker-tmp-dir /dev/shm --workers 1 --log-level debug --timeout 600 --preload --reload --bind 0.0.0.0:14714 engine.api:app
