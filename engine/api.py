@@ -75,6 +75,7 @@ class SubmitResource:
                 )
             )
 
+            problems = importlib.import_module("problems")
             problem = importlib.import_module(problem_module)
         except Exception:
             explanation = (
@@ -236,9 +237,9 @@ class SubmitResource:
                 expected_output = "Your function returned None. It shouldn't do that."
             else:
                 try:
-                    passed, expected_output = problem.verify_user_solution(
-                        tc, input_tuple, user_output
-                    )
+                    user_test_case = problem.ProblemTestCase(None, problem.INPUT_VARS, input_tuple, problem.OUTPUT_VARS, user_output)
+                    passed, correct_test_case = problems.test_case.test_case_solution_correct(tc, user_test_case, problem.ATOL, problem.RTOL)
+                    expected_output = correct_test_case.output_tuple()
                 except Exception:
                     explanation = "Internal engine error during user test case verification. Returning falcon HTTP 500."
                     add_error_to_response(
