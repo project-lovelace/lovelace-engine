@@ -11,6 +11,8 @@ from helpers import solutions_dir
 # then we can't use it in pytest's parametrize
 solution_files = glob.glob(os.path.join(solutions_dir("python"), "*.py"))
 
+# Don't test rna_translation.py for now.
+solution_files = list(filter(lambda s: "rna_translation" not in s, solution_files))
 
 @pytest.mark.python
 def test_python_solutions_exist():
