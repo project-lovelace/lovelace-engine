@@ -1,4 +1,4 @@
-name: lovelace-engine CI
+name: tests
 
 on:
   - push
