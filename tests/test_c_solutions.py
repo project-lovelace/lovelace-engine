@@ -11,7 +11,7 @@ from helpers import solutions_dir
 # then we can't use it in pytest's parametrize
 solution_files = glob.glob(os.path.join(solutions_dir("c"), "*.c"))
 
-# Don't test game_of_life.c for now.t
+# Don't test game_of_life.c for now.
 solution_files = list(filter(lambda s: "game_of_life" not in s, solution_files))
 
 @pytest.mark.c
