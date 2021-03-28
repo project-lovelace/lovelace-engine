@@ -1,5 +1,13 @@
 # Changelog
 
+## [v3.1.0](https://github.com/project-lovelace/lovelace-engine/tree/v3.1.0) (2021-03-27)
+
+[Full Changelog](https://github.com/project-lovelace/lovelace-engine/compare/v3.0.0...v3.1.0)
+
+**Merged pull requests:**
+
+- Run CI tests with Python 3.9 [\#77](https://github.com/project-lovelace/lovelace-engine/pull/77) ([ali-ramadhan](https://github.com/ali-ramadhan))
+
 ## [v3.0.0](https://github.com/project-lovelace/lovelace-engine/tree/v3.0.0) (2021-03-24)
 
 [Full Changelog](https://github.com/project-lovelace/lovelace-engine/compare/v2.0...v3.0.0)
