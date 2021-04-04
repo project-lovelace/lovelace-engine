@@ -8,16 +8,12 @@ ENV PYTHONIOENCODING=utf-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
 RUN apt-get update &&\
-    apt-get install -y build-essential curl wget nodejs
+    apt-get install -y build-essential curl wget nodejs gnupg
 
-RUN pip install --upgrade pip &&\
-    pip install -r requirements.txt
-
-ENV PATH="/root/julia/bin:${PATH}"
-RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.5/julia-1.5.3-linux-x86_64.tar.gz &&\
-    mkdir julia &&\
-    tar xf julia-1.5.3-linux-x86_64.tar.gz -C julia --strip-components 1 &&\
-    rm -rf julia-1.5.3-linux-x86_64.tar.gz &&\
+# Install Julia using the Jill installer script to make sure we get the proper version for this platform
+ENV PATH="/usr/local/bin:${PATH}"
+RUN pip install jill &&\
+    jill install 1.5.3 --upstream Official --confirm &&\
     julia -e 'import Pkg; Pkg.add("JSON");'
 
 CMD ["tail", "-f", "/dev/null"]
