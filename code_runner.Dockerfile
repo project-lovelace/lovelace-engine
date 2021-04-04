@@ -10,10 +10,13 @@ ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 RUN apt-get update &&\
     apt-get install -y build-essential curl wget nodejs gnupg
 
+RUN pip install --upgrade pip &&\
+    pip install -r requirements.txt 
+ 
 # Install Julia using the Jill installer script to make sure we get the proper version for this platform
 ENV PATH="/usr/local/bin:${PATH}"
-RUN pip install jill &&\
-    jill install 1.5.3 --upstream Official --confirm &&\
-    julia -e 'import Pkg; Pkg.add("JSON");'
+RUN pip install jill
+RUN jill install 1.5.3 --upstream Official --confirm
+RUN julia -e 'import Pkg; Pkg.add("JSON");'
 
 CMD ["tail", "-f", "/dev/null"]
