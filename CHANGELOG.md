@@ -1,5 +1,19 @@
 # Changelog
 
+## [v3.2.0](https://github.com/project-lovelace/lovelace-engine/tree/v3.2.0) (2021-04-11)
+
+[Full Changelog](https://github.com/project-lovelace/lovelace-engine/compare/v3.1.0...v3.2.0)
+
+**Fixed bugs:**
+
+- Fix issue where python processes run forever [\#23](https://github.com/project-lovelace/lovelace-engine/issues/23)
+
+**Merged pull requests:**
+
+- Bump urllib3 from 1.26.3 to 1.26.4 [\#80](https://github.com/project-lovelace/lovelace-engine/pull/80) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Modify code runner Dockerfile to support ARM architecture [\#79](https://github.com/project-lovelace/lovelace-engine/pull/79) ([benallan](https://github.com/benallan))
+- No need to filter solutions in tests anymore [\#78](https://github.com/project-lovelace/lovelace-engine/pull/78) ([ali-ramadhan](https://github.com/ali-ramadhan))
+
 ## [v3.1.0](https://github.com/project-lovelace/lovelace-engine/tree/v3.1.0) (2021-03-27)
 
 [Full Changelog](https://github.com/project-lovelace/lovelace-engine/compare/v3.0.0...v3.1.0)
