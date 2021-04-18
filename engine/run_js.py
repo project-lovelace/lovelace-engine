@@ -18,22 +18,24 @@ for i, input_tuple in enumerate(input_tuples):
     func_call_str = "$FUNCTION_NAME(" + ", ".join([json.dumps(arg) for arg in input_tuple]) + ")"
 
     glue_code = """
-    var timeStart = process.hrtime();
-    var userOutput = {:s};
-    var timeDiff = process.hrtime(timeStart);
-    var runTime = timeDiff[0] + (timeDiff[1] / 1e9);
+    (() => {{ // Double braces to avoid interfering with Python brace-based string formatting.
+        var timeStart = process.hrtime();
+        var userOutput = {:s};
+        var timeDiff = process.hrtime(timeStart);
+        var runTime = timeDiff[0] + (timeDiff[1] / 1e9);
     
-    var maxMemoryUsage = 0;
+        var maxMemoryUsage = 0;
     
-    var submissionData = {{ 
-      "userOutput": userOutput,
-      "runTime": runTime,
-      "maxMemoryUsage": maxMemoryUsage
-    }};  // Double braces to avoid interfering with Python brace-based string formatting.
+        var submissionData = {{
+            "userOutput": userOutput,
+            "runTime": runTime,
+            "maxMemoryUsage": maxMemoryUsage
+        }};
     
-    var fs = require('fs');
-    var data = JSON.stringify(submissionData);
-    fs.writeFileSync('{:s}', data);
+        var fs = require('fs');
+        var data = JSON.stringify(submissionData);
+        fs.writeFileSync('{:s}', data);
+    }})();
     """.format(func_call_str, output_json)
 
     # This will append glue code to the code file for each test case.
