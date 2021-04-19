@@ -1,4 +1,4 @@
-fs = require('fs');
+const fs = require('fs');
 
 function logistic_map(r) {
   let x = [0.5];
