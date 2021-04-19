@@ -229,6 +229,17 @@ class SubmitResource:
         for input_tuple, user_output, p_info, tc in zip(
             input_tuples, user_outputs, p_infos, test_cases
         ):
+
+            if isinstance(user_output, list):
+                # user_output is a list. This could be a multiple-return, or a legitimate list return.
+                # Here we will disambiguate dependant on the output variables the problem requires
+                if len(problem.OUTPUT_VARS) == 1:
+                    # Only one variable should be returned; Thus, this is a "list return"
+                    user_output = (user_output,)
+                else:
+                    # More than one variable should be returned, so this is a multiple return
+                    user_output = tuple(user_output)
+
             if user_output[0] is None:
                 logger.debug(
                     "Looks like user's function returned None: output={:}".format(user_output)
