@@ -53,9 +53,16 @@ def create_docker_container(client=None, name=None, image_name="lovelace-code-te
 
     logger.info('Creating docker container "{}" from image "{}"'.format(name, image_name))
 
-    # TODO memory limit, time limit?
+    # Max 40% cpu usage
+    cpu_period = 100000
+    cpu_quota = 40000
+
+    # Max 512 MiB memory limit
+    mem_limit = "512m"
+
     try:
-        container = client.containers.run(image_name, detach=True, name=name, remove=remove)
+        container = client.containers.run(image_name, detach=True, name=name, remove=remove,
+                                          cpu_period=cpu_period, cpu_quota=cpu_quota, mem_limit=mem_limit)
     except (docker.errors.ContainerError, docker.errors.ImageNotFound, docker.errors.APIError):
         logger.error(
             "Failed to start docker container! Please check that docker is installed and that "
