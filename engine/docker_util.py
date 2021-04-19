@@ -128,10 +128,8 @@ def docker_file_pull(container_id, src_path, tgt_path):
     return ret.stdout
 
 
-def docker_execute(container_id, cmd, timeout=60, env=None, client=None):
+def docker_execute(container_id, cmd, timeout=10, env=None, client=None):
     """Execute a command in a docker container"""
-
-    # TODO set a timeout here?
 
     if not client:
         client = docker.from_env()
@@ -139,18 +137,20 @@ def docker_execute(container_id, cmd, timeout=60, env=None, client=None):
     try:
         container = client.containers.get(container_id)
     except docker.errors.NotFound:
-        logger.error("Container {} could not be found.".format(container_id))
+        logger.error(f"Container {container_id} could not be found.")
         raise
 
-    logger.debug("Running command {} in container {}.".format(cmd, container_id))
+    timeout_cmd = ["timeout", f"{timeout}"]
+    full_cmd = timeout_cmd + cmd
+
+    logger.debug(f"Running command {full_cmd} in container {container_id}.")
 
     try:
-        exit_code, std_out = container.exec_run(cmd, environment=env, workdir=None)
+        exit_code, std_out = container.exec_run(full_cmd, environment=env, workdir=None)
     except docker.errors.APIError:
         logger.error(
-            "Failed to run cmd {} in container {}. Exit code: {}; Stdout: {}".format(
-                cmd, container_id, exit_code, std_out.decode("utf8")
-            )
+            f'Failed to run cmd {full_cmd} in container {container_id}.'
+            f'Exit code: {exit_code}; Stdout: {std_out.decode("utf8")}'
         )
         raise
 
