@@ -26,6 +26,17 @@
         "ideas",
         "test"
       ]
+    },
+    {
+      "login": "benallan",
+      "name": "benallan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12690582?v=4",
+      "profile": "https://github.com/benallan",
+      "contributions": [
+        "code",
+        "ideas",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
