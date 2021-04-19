@@ -17,6 +17,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="http://aliramadhan.me"><img src="https://avatars.githubusercontent.com/u/20099589?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ali Ramadhan</b></sub></a><br /><a href="https://github.com/project-lovelace/lovelace-engine/commits?author=ali-ramadhan" title="Code">💻</a> <a href="#infra-ali-ramadhan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/project-lovelace/lovelace-engine/commits?author=ali-ramadhan" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/basimr"><img src="https://avatars.githubusercontent.com/u/9298270?v=4?s=100" width="100px;" alt=""/><br /><sub><b>br</b></sub></a><br /><a href="https://github.com/project-lovelace/lovelace-engine/commits?author=basimr" title="Code">💻</a> <a href="#ideas-basimr" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/project-lovelace/lovelace-engine/commits?author=basimr" title="Tests">⚠️</a></td>
   </tr>
 </table>
 
