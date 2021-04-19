@@ -52,3 +52,23 @@ def submit_solution(engine_submit_uri):
         return response.json()
 
     return _submit_solution
+
+
+@pytest.fixture()
+def submit_file(engine_submit_uri):
+    def _submit_solution(file_path, problem, language):
+        with open(file_path, "r") as solution_file:
+            code = solution_file.read()
+        code_b64 = base64.b64encode(code.encode("utf-8")).decode("utf-8")
+
+        payload_dict = {"problem": problem, "language": language, "code": code_b64}
+        payload_json = json.dumps(payload_dict)
+
+        t1 = time.perf_counter()
+        response = requests.post(engine_submit_uri, data=payload_json)
+        t2 = time.perf_counter()
+        print(f"{t2 - t1 : .6f} seconds ", end='')
+
+        return response.json()
+
+    return _submit_solution
