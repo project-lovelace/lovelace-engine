@@ -6,5 +6,5 @@ function logistic_map(r) {
     let last = x[x.length - 1];
     x.push(r * last * (1 - last));
   }
-  return [x];
+  return x;
 }
