@@ -38,6 +38,11 @@ jobs:
           docker run -d -v /var/run/docker.sock:/var/run/docker.sock -p 14714:14714 lovelace-engine
           docker ps -a
 
+      - name: Clone lovelace-problems
+        run: |
+          git clone https://github.com/project-lovelace/lovelace-problems.git
+          ln -s lovelace-problems/problems/ problems
+
       - name: Clone lovelace-solutions
         run: |
           git clone https://${{ secrets.LOVELACE_GITHUB_TOKEN }}@github.com/project-lovelace/lovelace-solutions.git
@@ -50,6 +55,7 @@ jobs:
         run: pytest --capture=no --verbose
         env:
           LOVELACE_SOLUTIONS_DIR: ./lovelace-solutions/
+          LOVELACE_PROBLEMS_DIR: ./lovelace-problems/
 
   deploy:
     name: Push Docker image to Docker Hub
