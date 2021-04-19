@@ -6,6 +6,17 @@
   "commit": false,
   "contributors": [
     {
+      "login": "ali-ramadhan",
+      "name": "Ali Ramadhan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20099589?v=4",
+      "profile": "http://aliramadhan.me",
+      "contributions": [
+        "code",
+        "infra",
+        "test"
+      ]
+    },
+    {
       "login": "basimr",
       "name": "br",
       "avatar_url": "https://avatars.githubusercontent.com/u/9298270?v=4",
