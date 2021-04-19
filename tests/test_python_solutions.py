@@ -1,25 +1,15 @@
-import glob
 import json
-import os
-
 import pytest
 
-from helpers import solutions_dir
+from helpers import get_solution_filepaths, id_func
 
 
-# NOTE: If we make solution_files a fixture instead of a normal attr/function,
-# then we can't use it in pytest's parametrize
-solution_files = glob.glob(os.path.join(solutions_dir("python"), "*.py"))
+solution_files = get_solution_filepaths(language="python")
 
 
 @pytest.mark.python
 def test_python_solutions_exist():
     assert solution_files
-
-
-def id_func(param):
-    problem_name, ext = os.path.splitext(os.path.basename(param))
-    return problem_name
 
 
 @pytest.mark.python
