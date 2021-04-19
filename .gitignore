@@ -99,9 +99,11 @@ resources
 # IDE files
 .idea
 
-# Symlinks
+# Symlinks and other repos
 lovelace-solutions
+lovelace-problems
 solutions
+problems
 
 # Secrets
 token.txt
