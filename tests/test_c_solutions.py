@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from helpers import get_solution_filepaths, id_func
+from helpers import get_solution_filepaths, problem_name_id
 
 
 solution_files = get_solution_filepaths(language="c")
@@ -16,7 +16,7 @@ def test_c_solutions_exist():
 
 
 @pytest.mark.c
-@pytest.mark.parametrize("solution_file", solution_files, ids=id_func)
+@pytest.mark.parametrize("solution_file", solution_files, ids=problem_name_id)
 def test_submit_file(solution_file, submit_solution):
     result = submit_solution(solution_file)
 

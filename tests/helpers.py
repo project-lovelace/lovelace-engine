@@ -29,6 +29,7 @@ def problems_dir():
 
 
 language2ext = {"python": "py", "javascript": "js", "julia": "jl", "c": "c"}
+ext2language = {"py": "python", "js": "javascript", "jl": "julia", "c": "c"}
 
 
 def get_solution_filepaths(language=""):
@@ -48,6 +49,10 @@ def get_solution_filepaths(language=""):
     return valid_solution_filepaths
 
 
-def id_func(param):
+def problem_name_id(param):
     problem_name, ext = os.path.splitext(os.path.basename(param))
     return problem_name
+
+
+def filename_id(param):
+    return os.path.basename(param)
