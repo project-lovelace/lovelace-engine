@@ -22,3 +22,8 @@ def test_infinite_loop_times_out(submit_file):
     with pytest.raises(Exception) as e_info:
         result = submit_file(filepath, problem="scientific_temperatures", language="python")
 
+
+def test_memory_explosion_times_out(submit_file):
+    filepath = os.path.join(cwd, "dummy_solutions", "memory_explosion.py")
+    with pytest.raises(Exception) as e_info:
+        result = submit_file(filepath, problem="speed_of_light", language="python")
