@@ -37,6 +37,16 @@
         "ideas",
         "test"
       ]
+    },
+    {
+      "login": "BinaryFissionGames",
+      "name": "Brandon Johnson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10042942?v=4",
+      "profile": "https://github.com/BinaryFissionGames",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
