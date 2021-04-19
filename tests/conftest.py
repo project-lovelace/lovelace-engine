@@ -55,7 +55,7 @@ def submit_solution(engine_submit_uri):
 
 
 @pytest.fixture()
-def submit_solution(engine_submit_uri):
+def submit_file(engine_submit_uri):
     def _submit_solution(file_path, problem, language):
         with open(file_path, "r") as solution_file:
             code = solution_file.read()
