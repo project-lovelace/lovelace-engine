@@ -128,7 +128,7 @@ def docker_file_pull(container_id, src_path, tgt_path):
     return ret.stdout
 
 
-def docker_execute(container_id, cmd, timeout=10, env=None, client=None):
+def docker_execute(container_id, cmd, timeout=30, env=None, client=None):
     """Execute a command in a docker container"""
 
     if not client:
