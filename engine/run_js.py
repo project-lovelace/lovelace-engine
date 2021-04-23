@@ -54,12 +54,8 @@ for i, _ in enumerate(input_tuples):
     runtime = submission_data['runTime']
     max_mem_usage = submission_data['maxMemoryUsage']
 
-    if isinstance(user_output, list) and len(user_output) == 1 and isinstance(user_output[0], list):
-        user_output = (user_output[0],)  # Solution is a list
-    elif isinstance(user_output, list):
-        user_output = tuple(user_output)  # Solution is a "multiple return"
-    else:
-        user_output = (user_output,)  # Solution is a string or number
+    if not isinstance(user_output, list):
+        user_output = (user_output,)  # Solution is a string, number, or dict, meaning it is a single-value return.
 
     output_dict = {
         'user_output': user_output,
