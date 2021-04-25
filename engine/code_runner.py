@@ -22,12 +22,17 @@ class FilePushError(Exception):
         super().__init__(message)
 
 
+class FilePullError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class EngineExecutionError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
 
-class FilePullError(Exception):
+class EngineTimeoutError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
@@ -134,7 +139,12 @@ class CodeRunner(AbstractRunner):
         if exec_retval != 0:
             for fn in required_files:
                 util.delete_file(fn)
-            raise EngineExecutionError(exec_stdout)
+
+            # The `timeout` Linux command exits with return code 124 if the command times out.
+            if exec_retval == 124:
+                raise EngineTimeoutError("Your code took too long to run.")
+            else:
+                raise EngineExecutionError(exec_stdout)
 
         user_outputs = []
         process_infos = []

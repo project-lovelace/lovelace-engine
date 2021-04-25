@@ -10,11 +10,20 @@ cwd = os.path.dirname(os.path.realpath(__file__))
 solution_files = glob.glob(os.path.join(cwd, "dummy_solutions", "*"))
 
 
-@pytest.mark.parametrize("solution_file", solution_files, ids=filename_id)
-def test_dummy_solutions(solution_file, submit_file):
-    problem_name, ext = os.path.splitext(os.path.basename(solution_file))
-    result = submit_file(solution_file, problem_name, ext2language[ext[1:]])
+# See: https://github.com/project-lovelace/lovelace-engine/issues/84
+def test_84(submit_file):
+    filepath = os.path.join(cwd, "dummy_solutions", "chaos_84.js")
+    result = submit_file(filepath, problem="chaos", language="javascript")
+    assert result.get("success") is True, f"Failed. Engine output:\n{json.dumps(result, indent=4)}"
 
-    assert result.get("success") is True, "Failed. Engine output:\n{:}".format(
-        json.dumps(result, indent=4)
-    )
+
+def test_infinite_loop_times_out(submit_file):
+    filepath = os.path.join(cwd, "dummy_solutions", "infinite_loop.py")
+    with pytest.raises(Exception) as e_info:
+        result = submit_file(filepath, problem="scientific_temperatures", language="python")
+
+
+# def test_memory_explosion_times_out(submit_file):
+#     filepath = os.path.join(cwd, "dummy_solutions", "memory_explosion.py")
+#     with pytest.raises(Exception) as e_info:
+#         result = submit_file(filepath, problem="speed_of_light", language="python")
