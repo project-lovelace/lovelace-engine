@@ -6,6 +6,9 @@ from helpers import get_solution_filepaths, problem_name_id
 
 solution_files = get_solution_filepaths(language="python")
 
+# Don't test numerical_diff.py for now.
+solution_files = list(filter(lambda s: "numerical_diff" not in s, solution_files))
+
 
 @pytest.mark.python
 def test_python_solutions_exist():
